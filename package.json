@@ -1,0 +1,22 @@
+{
+  "name": "toppi-dapp",
+  "version": "0.0.1",
+  "description": "Dapp to topup your services",
+  "main": "index.js",
+  "repository": "https://github.com/toppi-org/toppi-dapp.git",
+  "author": "luisgj <guayabas@hey.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.4.1",
+    "@openzeppelin/contracts-upgradeable": "^4.4.1",
+    "@openzeppelin/truffle-upgrades": "^1.11.0",
+    "@truffle/hdwallet-provider": "^2.0.0",
+    "create-react-app": "^5.0.0",
+    "truffle": "^5.4.26",
+    "web3": "^1.6.1"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6"
+  }
+}
