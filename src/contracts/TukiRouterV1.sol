@@ -1,14 +1,37 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.3;
+pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract ToppiRouterV1 is Ownable, Initializable {
-    using Address for address payable;
-    using SafeMath for uint256;
+/**
+ * TODO: CREATE EXTENSIVE DOCUMENTATION ABOUT THE USAGE OF THIS CONTRACT AND ITS INTENTIONS
+ * AND POSSIBLE ATTACK VECTORS
+ * 
+ * ----- TukiRouter -----
+ * This Smart Contract is intented to be user-facing.
+ * Any valid address can request a fulfillment to a valid fulfillable.
+ * 
+ * Pre-conditions:
+ * 
+ * - verified identifier
+ * - valid fulfillable id
+ * - enough balance on the sender account
+ * 
+ * 
+ * Post-conditions:
+ * 
+ * - ServiceRequested Event emitted
+ * - payment due is trasferred to escrow contract until fulfillment
+ * 
+ * -----------------------
+ * 
+ */
+contract TukiRouterV1 is Initializable, OwnableUpgradeable {
+    using AddressUpgradeable for address payable;
+    using SafeMathUpgradeable for uint256;
 
     mapping(uint256 => address) private _services;
 
@@ -18,7 +41,7 @@ contract ToppiRouterV1 is Ownable, Initializable {
      * @dev Constructor.
      */
     function initialize() public virtual initializer {
-        _transferOwnership(msg.sender);
+        __Ownable_init();
     }
 
     /**
@@ -26,6 +49,9 @@ contract ToppiRouterV1 is Ownable, Initializable {
      */
     function requestService(address escrowContract, string calldata serviceRef) public payable returns (bool) {
         bytes32 ref = keccak256(abi.encodePacked(serviceRef));
+        //TODO Validate reference
+        //TODO validate amount with modifier
+        //TODO validate enough balance on payer
         //TODO route the payment to the corresponding escrow contract
         emit ServiceRequested(msg.sender, msg.value, ref, escrowContract);
         return true;

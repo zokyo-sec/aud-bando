@@ -1,4 +1,4 @@
-const FiatBacked = artifacts.require("ToppiEscrowV1");
+const TukiFulfillerV1 = artifacts.require("TukiFulfillerV1");
 
 const { expect, assert } = require('chai');
 
@@ -6,10 +6,10 @@ const tokens = (n) => {
   return web3.utils.toWei(n, 'ether');
 }
 
-contract("ToppiEscrowV1", function (accounts) {
+contract("TukiFulfillerV1", function (accounts) {
   let fiatToken;
 
-  before(async () => {
+  /*before(async () => {
     fiatToken = await FiatBacked.new();
     await fiatToken.initialize(
       'NanchesV0',
@@ -78,5 +78,5 @@ contract("ToppiEscrowV1", function (accounts) {
       }
     });
 
-  });
+  });*/
 });

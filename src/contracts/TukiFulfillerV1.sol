@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 
-pragma solidity 0.8.3;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 
 /**
- * @title ToppiEscrow
+ * @title ToppiFulfillerV1
  * @dev Base escrow contract, holds funds designated for a beneficiary until they
  * withdraw them or a refund is emitted.
  *
@@ -22,7 +23,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
  * payment method should be its owner, and provide public methods redirecting
  * to the escrow's deposit and withdraw.
  */
-contract ToppiEscrowV1 is Ownable, Initializable {
+contract TukiFulfillerV1 is Initializable, OwnableUpgradeable {
     using Address for address payable;
     using SafeMath for uint256;
 
@@ -36,7 +37,7 @@ contract ToppiEscrowV1 is Ownable, Initializable {
     uint256 private _serviceIdentifier;
 
     /**
-     * @dev Constructor.
+     * @dev initializer.
      * @param beneficiary_ The beneficiary of the deposits.
      */
     function initialize(address payable beneficiary_, uint256 serviceIdentifier_) public virtual initializer {
