@@ -44,8 +44,8 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         uint256 serviceID,
         uint256 fiatAmout
     );
-
     event RefValidationFailed(uint256 serviceID, string serviceRef);
+    event ServiceAdded(uint256 serviceID, address escrow, address validator);
   
     /**
      * @dev Constructor.
@@ -121,6 +121,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     {
         _services[serviceID] = serviceEscrow;
         _validators[serviceID] = validator;
+        emit ServiceAdded(serviceID, serviceEscrow, validator);
         return [_services[serviceID], _validators[serviceID]];
     }
 }
