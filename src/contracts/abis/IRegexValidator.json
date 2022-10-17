@@ -1,0 +1,179 @@
+{
+  "contractName": "IRegexValidator",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "input",
+          "type": "string"
+        }
+      ],
+      "name": "matches",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"input\",\"type\":\"string\"}],\"name\":\"matches\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/src/contracts/IRegexValidator.sol\":\"IRegexValidator\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/src/contracts/IRegexValidator.sol\":{\"keccak256\":\"0x8c75a84fa20cfeed7474dc2b42f7bbc707f3eba956661ff3ab045f2aee9114fe\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://78a0ed347018e25a4109576f630377b5824b29ba28ff7ae64bb8de8317be169d\",\"dweb:/ipfs/QmVNPjUB4t5AS6A81UcdhUMV28aaNURzSLpUVfHbb5VmyC\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "immutableReferences": {},
+  "generatedSources": [],
+  "deployedGeneratedSources": [],
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.17;\n\ninterface IRegexValidator {\n    function matches(string memory input) external pure returns (bool);\n}\n",
+  "sourcePath": "/Users/luisgabriel/tuki-org/contracts/src/contracts/IRegexValidator.sol",
+  "ast": {
+    "absolutePath": "project:/src/contracts/IRegexValidator.sol",
+    "exportedSymbols": {
+      "IRegexValidator": [
+        1660
+      ]
+    },
+    "id": 1661,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1652,
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".17"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "32:24:11"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "IRegexValidator",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "id": 1660,
+        "linearizedBaseContracts": [
+          1660
+        ],
+        "name": "IRegexValidator",
+        "nameLocation": "68:15:11",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "functionSelector": "32ac752b",
+            "id": 1659,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "matches",
+            "nameLocation": "99:7:11",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1655,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1654,
+                  "mutability": "mutable",
+                  "name": "input",
+                  "nameLocation": "121:5:11",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1659,
+                  "src": "107:19:11",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 1653,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "107:6:11",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "106:21:11"
+            },
+            "returnParameters": {
+              "id": 1658,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1657,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1659,
+                  "src": "151:4:11",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 1656,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "151:4:11",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "150:6:11"
+            },
+            "scope": 1660,
+            "src": "90:67:11",
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 1661,
+        "src": "58:101:11",
+        "usedErrors": []
+      }
+    ],
+    "src": "32:128:11"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.8.17+commit.8df45f5f.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.4.10",
+  "updatedAt": "2022-10-16T22:29:56.031Z",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  }
+}
