@@ -27,7 +27,7 @@ contract TukiFulfillerV1 is Initializable, OwnableUpgradeable {
     using Address for address payable;
     using SafeMath for uint256;
 
-    event Deposit(address indexed payee, uint256 weiAmount);
+    event DepositReceived(address indexed payee, uint256 weiAmount);
     event Withdrawn(address indexed payee, uint256 weiAmount);
     event RefundRegistered(address refundee, uint256 amount);
 
@@ -82,7 +82,7 @@ contract TukiFulfillerV1 is Initializable, OwnableUpgradeable {
     function deposit(address payer) public payable virtual onlyOwner {
         uint256 amount = msg.value;
         _deposits[payer] = amount.add(_deposits[payer]);
-        emit Deposit(payer, amount);
+        emit DepositReceived(payer, amount);
     }
 
     /**

@@ -19,6 +19,8 @@ import "./IRegexValidator.sol";
  * 
  * - verified identifier
  * - valid fulfillable id
+ * - positive amount
+ * - positive fiat amount in precision 2
  * - enough balance on the sender account
  * 
  * 
@@ -86,18 +88,18 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         public 
         payable
         whenNotPaused
-        returns (bool) 
+        returns (bool)
     {
-        require(address(_services[serviceID]) != address(0), "Service ID is not supported.");
-        require(address(_validators[serviceID]) != address(0), "Validator not found for service ID.");
+        require(address(_services[serviceID]) != address(0), "Service ID is not supported");
+        require(address(_validators[serviceID]) != address(0), "Validator not found for service ID");
+        require(msg.value > 0, "Amount must be greater than zero");
+        require(address(this).balance > msg.value, "Sender address has insufficient funds");
         bool isValidRef = IRegexValidator(_validators[serviceID]).matches(serviceRef);
         if(!isValidRef) {
             emit RefValidationFailed(serviceID, serviceRef);
             revert("The service identifier failed to validate");
         }
         bytes32 ref = keccak256(abi.encodePacked(serviceRef));
-        //TODO validate amount with modifier
-        //TODO validate enough balance on payer
         //TODO route the payment to the corresponding escrow contract
         emit ServiceRequested(msg.sender, msg.value, ref, serviceID, fiatAmount);
         return true;
@@ -113,12 +115,26 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         return [_services[serviceID], _validators[serviceID]];
     }
 
+    /**
+     * @dev setService
+     * This method must only be called by an owner.
+     * It sets up a service escrow address and validator address.
+     * 
+     * The escrow is intended to be a valid tuki escrow contract
+     * 
+     * The validator address is intended to be a contract that validates the service's
+     * identifier. eg. phone number, bill number, etc.
+     * @return address[2]
+     */
     function setService(uint256 serviceID, address serviceEscrow, address validator) 
         public 
         virtual 
         onlyOwner 
         returns (address[2] memory) 
     {
+        require(serviceID > 0, "Service ID is invalid");
+        require(address(serviceEscrow) != address(0), "Service escrow is required");
+        require(address(validator) != address(0), "Validator address is required");
         _services[serviceID] = serviceEscrow;
         _validators[serviceID] = validator;
         emit ServiceAdded(serviceID, serviceEscrow, validator);
