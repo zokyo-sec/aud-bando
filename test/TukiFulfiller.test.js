@@ -1,82 +1,80 @@
 const TukiFulfillerV1 = artifacts.require("TukiFulfillerV1");
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 
 const { expect, assert } = require('chai');
 
-const tokens = (n) => {
-  return web3.utils.toWei(n, 'ether');
-}
+const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
+const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
+
+let fulfillerContract;
 
 contract("TukiFulfillerV1", function (accounts) {
-  let fiatToken;
-
-  /*before(async () => {
-    fiatToken = await FiatBacked.new();
-    await fiatToken.initialize(
-      'NanchesV0',
-      'NAN',
-      'MXN',
-      18,
-      accounts[0],
-      accounts[0],
-      accounts[0],
-    );
-    await fiatToken.configureMinter(accounts[0], tokens('5000'));
+  
+  before(async () => {
+    fulfillerContract = await deployProxy(TukiFulfillerV1);
   });
 
-  describe("FiatBackedToken Tests", async () => {
-
-    it("should be initialized with data", async () => {
-      assert.equal(await fiatToken.totalSupply(), 0)
-      assert.equal(await fiatToken.name(), 'NanchesV0')
-      assert.equal(await fiatToken.masterMinter(), accounts[0])
-      assert.equal(await fiatToken.owner(), accounts[0])
-      assert.equal(await fiatToken.currency(), 'MXN')
+  describe("Upgradeability", async () => {
+    it("should have transferred ownership to sender", async () => {
+      assert.equal(await fulfillerContract.owner(), accounts[0]);
     });
 
-    it("should not be able to be initialized again", async () => {
+    it("should have upgraded to new implementation", async () => {
+        v2 = await upgradeProxy(fulfillerContract.address, UpgradeTester);
+        assert.equal(await v2.isUpgrade(), true);
+        assert.equal(v2.address, fulfillerContract.address);
+    });
+  });
+
+  describe("Pausability", async () => {
+    it("should only allow an owner to pause the contract", async () => {
       try {
-        await fiatToken.initialize(
-          'NanchesV0',
-          'NAN',
-          'MXN',
-          18,
-          accounts[0],
-          accounts[0],
-          accounts[0],
+        assert.equal(await v2.owner(), accounts[0]);
+        await v2.pause({from: accounts[1]});
+        throw new Error("This should have thrown lines ago.");
+      } catch(err) {
+        assert.equal(
+          err.message,
+          `${REVERT_ERROR_PREFIX} revert Ownable: caller is not the owner`
         );
-      } catch(e) {
-        return assert.equal(
-          e.message,
-          'Returned error: VM Exception while processing transaction: revert FiatBackedToken: contract is already initialized -- Reason given: FiatBackedToken: contract is already initialized.'
+      }
+      await v2.pause();
+      assert.equal(await v2.paused(), true);
+    });
+
+    it("should only allow an owner to unpause the contract", async () => {
+      try {
+        assert.equal(await v2.owner(), accounts[0]);
+        await v2.unpause({from: accounts[1]});
+        throw new Error("This should have thrown lines ago.");
+      } catch(err) {
+        assert.equal(
+          err.message,
+          `${REVERT_ERROR_PREFIX} revert Ownable: caller is not the owner`
+        );
+      }
+      await v2.unpause();
+      assert.equal(await v2.paused(), false);
+    });
+  });
+
+  describe("Ownability", async () => {
+    it("should only allow an owner for test method", async () => {
+      try {
+        assert.notEqual(await v2.owner(), accounts[1]);
+        const response = await v2.isUpgrade({ from: accounts[1] });
+        throw new Error("This should have thrown lines ago.");
+      } catch(err) {
+        assert.equal(
+          err.message,
+          `${REVERT_ERROR_PREFIX} revert Ownable: caller is not the owner`
         );
       }
     });
 
-    it("should allow us to mint some tokens", async () => {
-      assert.equal(await fiatToken.isMinter(accounts[0]), true);
-      await fiatToken.mint(accounts[0], tokens('1000'));
-      const supply = await fiatToken.totalSupply();
-      assert.equal(supply.toString(), tokens('1000'));
+    it("should allow owner to transfer ownership", async () => {
+        await v2.transferOwnership(accounts[1]);
+        assert.equal(await v2.owner(), accounts[1]);
     });
-
-    it("should allow us to burn some tokens", async () => {
-      assert.equal(await fiatToken.isMinter(accounts[0]), true);
-      await fiatToken.burn(tokens('1000'));
-      const supply = await fiatToken.totalSupply();
-      assert.equal(supply.toString(),'0');
-    });
-
-    it("should not allow to mint if allowance is exceeded.", async () => {
-      try {
-        assert.equal(await fiatToken.isMinter(accounts[1]), false);
-        await fiatToken.mint(accounts[1], tokens('10000'));
-      } catch (e) {
-        return assert.equal(
-          e.message,
-          'Returned error: VM Exception while processing transaction: revert FiatBacked: mint amount exceeds minterAllowance -- Reason given: FiatBacked: mint amount exceeds minterAllowance.'
-        );
-      }
-    });
-
-  });*/
+  });
 });

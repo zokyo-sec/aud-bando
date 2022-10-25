@@ -1,5 +1,5 @@
 {
-  "contractName": "IRegexValidator",
+  "contractName": "IIdentifierValidator",
   "abi": [
     {
       "inputs": [
@@ -21,7 +21,7 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"input\",\"type\":\"string\"}],\"name\":\"matches\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/src/contracts/IRegexValidator.sol\":\"IRegexValidator\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/src/contracts/IRegexValidator.sol\":{\"keccak256\":\"0x8c75a84fa20cfeed7474dc2b42f7bbc707f3eba956661ff3ab045f2aee9114fe\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://78a0ed347018e25a4109576f630377b5824b29ba28ff7ae64bb8de8317be169d\",\"dweb:/ipfs/QmVNPjUB4t5AS6A81UcdhUMV28aaNURzSLpUVfHbb5VmyC\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"input\",\"type\":\"string\"}],\"name\":\"matches\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/src/contracts/IIdentifierValidator.sol\":\"IIdentifierValidator\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/src/contracts/IIdentifierValidator.sol\":{\"keccak256\":\"0x545353052e290ea8e3881b00f93c7cf7a40c883baf346ff3dba8fde7d44c86fe\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://b51a8777e32779f3f28ed3fd0a257d37ce54eb0dbd030a471adc6afdd3abcebc\",\"dweb:/ipfs/QmVH59Dr9oWVsMZxb6xrJsauWES5tNEyK5x2SfnWSw8VsC\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -29,21 +29,21 @@
   "deployedGeneratedSources": [],
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.17;\n\ninterface IRegexValidator {\n    function matches(string memory input) external pure returns (bool);\n}\n",
-  "sourcePath": "/Users/luisgabriel/tuki-org/contracts/src/contracts/IRegexValidator.sol",
+  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.17;\n\ninterface IIdentifierValidator {\n    function matches(string memory input) external pure returns (bool);\n}\n",
+  "sourcePath": "/Users/luisoscargabriel/tuki-org/contracts/src/contracts/IIdentifierValidator.sol",
   "ast": {
-    "absolutePath": "project:/src/contracts/IRegexValidator.sol",
+    "absolutePath": "project:/src/contracts/IIdentifierValidator.sol",
     "exportedSymbols": {
-      "IRegexValidator": [
-        1660
+      "IIdentifierValidator": [
+        2406
       ]
     },
-    "id": 1661,
+    "id": 2407,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1652,
+        "id": 2398,
         "literals": [
           "solidity",
           "^",
@@ -51,45 +51,45 @@
           ".17"
         ],
         "nodeType": "PragmaDirective",
-        "src": "32:24:11"
+        "src": "32:24:15"
       },
       {
         "abstract": false,
         "baseContracts": [],
-        "canonicalName": "IRegexValidator",
+        "canonicalName": "IIdentifierValidator",
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 1660,
+        "id": 2406,
         "linearizedBaseContracts": [
-          1660
+          2406
         ],
-        "name": "IRegexValidator",
-        "nameLocation": "68:15:11",
+        "name": "IIdentifierValidator",
+        "nameLocation": "68:20:15",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "functionSelector": "32ac752b",
-            "id": 1659,
+            "id": 2405,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "matches",
-            "nameLocation": "99:7:11",
+            "nameLocation": "104:7:15",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 1655,
+              "id": 2401,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 1654,
+                  "id": 2400,
                   "mutability": "mutable",
                   "name": "input",
-                  "nameLocation": "121:5:11",
+                  "nameLocation": "126:5:15",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1659,
-                  "src": "107:19:11",
+                  "scope": 2405,
+                  "src": "112:19:15",
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
@@ -97,10 +97,10 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 1653,
+                    "id": 2399,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
-                    "src": "107:6:11",
+                    "src": "112:6:15",
                     "typeDescriptions": {
                       "typeIdentifier": "t_string_storage_ptr",
                       "typeString": "string"
@@ -109,21 +109,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "106:21:11"
+              "src": "111:21:15"
             },
             "returnParameters": {
-              "id": 1658,
+              "id": 2404,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 1657,
+                  "id": 2403,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1659,
-                  "src": "151:4:11",
+                  "scope": 2405,
+                  "src": "156:4:15",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -131,10 +131,10 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 1656,
+                    "id": 2402,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
-                    "src": "151:4:11",
+                    "src": "156:4:15",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -143,21 +143,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "150:6:11"
+              "src": "155:6:15"
             },
-            "scope": 1660,
-            "src": "90:67:11",
+            "scope": 2406,
+            "src": "95:67:15",
             "stateMutability": "pure",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 1661,
-        "src": "58:101:11",
+        "scope": 2407,
+        "src": "58:106:15",
         "usedErrors": []
       }
     ],
-    "src": "32:128:11"
+    "src": "32:133:15"
   },
   "compiler": {
     "name": "solc",
@@ -165,7 +165,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-10-16T22:29:56.031Z",
+  "updatedAt": "2022-10-25T01:53:46.068Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},

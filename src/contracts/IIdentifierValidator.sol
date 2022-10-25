@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-interface IRegexValidator {
+interface IIdentifierValidator {
     function matches(string memory input) external pure returns (bool);
 }

@@ -7,30 +7,13 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./IRegexValidator.sol";
+import "./IIdentifierValidator.sol";
 
 /**
- * 
  * ----- TukiRouter -----
  * This Smart Contract is intented to be user-facing.
  * Any valid address can request a fulfillment to a valid fulfillable.
- * 
- * Pre-conditions:
- * 
- * - verified identifier
- * - valid fulfillable id
- * - positive amount
- * - positive fiat amount in precision 2
- * - enough balance on the sender account
- * 
- * 
- * Post-conditions:
- * 
- * - ServiceRequested Event emitted
- * - payment due is trasferred to escrow contract until fulfillment
- * 
  * -----------------------
- * 
  */
 contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using AddressUpgradeable for address payable;
@@ -76,13 +59,26 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     {}
 
     /**
-     * @return The current state of the escrow.
+     * requestService
+     * @return true if amount was transferred to the escrow.
+     * Pre-conditions:
+     * 
+     * - verified identifier
+     * - valid fulfillable id
+     * - valid IIdentifierValidator contract
+     * - positive amount
+     * - positive fiat amount in precision 2
+     * - enough balance on the sender account
+     * 
+     * 
+     * Post-conditions:
+     * 
+     * - ServiceRequested Event emitted
+     * - payment due is trasferred to escrow contract until fulfillment
      */
     function requestService(
             uint256 serviceID, 
             string memory serviceRef,
-            bool isERC20,
-            address tokenAddress,
             uint256 fiatAmount
         ) 
         public 
@@ -93,12 +89,10 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         require(address(_services[serviceID]) != address(0), "Service ID is not supported");
         require(address(_validators[serviceID]) != address(0), "Validator not found for service ID");
         require(msg.value > 0, "Amount must be greater than zero");
-        require(address(this).balance > msg.value, "Sender address has insufficient funds");
-        bool isValidRef = IRegexValidator(_validators[serviceID]).matches(serviceRef);
-        if(!isValidRef) {
-            emit RefValidationFailed(serviceID, serviceRef);
-            revert("The service identifier failed to validate");
-        }
+        require(
+            IIdentifierValidator(_validators[serviceID]).matches(serviceRef),
+            "The service identifier failed to validate"
+        );
         bytes32 ref = keccak256(abi.encodePacked(serviceRef));
         //TODO route the payment to the corresponding escrow contract
         emit ServiceRequested(msg.sender, msg.value, ref, serviceID, fiatAmount);
