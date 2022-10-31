@@ -10,6 +10,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./ITukiFulfillableV1.sol";
 
 /**
@@ -28,12 +29,16 @@ import "./ITukiFulfillableV1.sol";
 contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable, ITukiFulfillableV1 {
     using AddressUpgradeable for address payable;
     using SafeMathUpgradeable for uint256;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+
+    //Auto-incrementable id storage
+    CountersUpgradeable.Counter private _fulfillmentIds;
 
     // All fulfillment records keyed by their ids
     mapping(uint256 => FulFillmentRecord) private _fulfillmentRecords;
 
     // Deposits mapped to subject addresses
-    mapping(address => bytes32[]) private _fulfillmentRecordsForSubject;
+    mapping(address => uint256[]) private _fulfillmentRecordsForSubject;
 
     // Total deposits registered
     uint256 private _fulfillmentRecordCount;
@@ -46,6 +51,9 @@ contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     //The Service Identifier to its corresponding Fulfillable product
     uint256 private _serviceIdentifier;
+
+    // The amount that is available to be released by the beneficiary.
+    uint256 _releaseablePool;
 
     /**
      * @dev initializer.
@@ -92,12 +100,12 @@ contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     /**
      * @dev Stores the sent amount as credit to be claimed.
-     * @param payer The destination address of the funds.
+     * @param fulfillmentRequest The destination address of the funds.
      */
-    function deposit(address payer) public payable virtual onlyOwner {
+    function deposit(FulFillmentRequest memory fulfillmentRequest) public payable virtual onlyOwner {
         uint256 amount = msg.value;
-        _deposits[payer] = amount.add(_deposits[payer]);
-        emit DepositReceived(payer, amount);
+        _deposits[fulfillmentRequest.payer] = amount.add(_deposits[fulfillmentRequest.payer]);
+        emit DepositReceived(fulfillmentRequest);
     }
 
     /**
@@ -113,7 +121,7 @@ contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function withdrawRefund(address payable refundee) public virtual onlyOwner {
         require(_authorized_refunds[refundee] > 0, "Address is not allowed any refunds");
         _authorized_refunds[refundee] = 0;
-        __withdrawRefund(refundee);
+        _withdrawRefund(refundee);
     }
 
     /**
@@ -123,9 +131,8 @@ contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable
     * Will emit a RefundWithdrawn event on success.
     * 
     * @param refundee The address to send the value to.
-    * @param weiAmount The amount to refund
     */
-    function __withdrawRefund(address payable refundee) internal {
+    function _withdrawRefund(address payable refundee) internal onlyOwner {
         refundee.sendValue(_authorized_refunds[refundee]); 
         emit RefundWithdrawn(refundee, _authorized_refunds[refundee]);
     }
@@ -136,7 +143,7 @@ contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable
      * @param refundee the record to be
      * @param weiAmount the amount to be authorized.
      */
-    function authorizeRefund(address refundee, uint256 weiAmount) public virtual onlyOwner {
+    function _authorizeRefund(address refundee, uint256 weiAmount) internal onlyOwner {
         uint256 total_refunds = _authorized_refunds[refundee].add(weiAmount);
         require(
             _deposits[refundee] >= weiAmount,
@@ -152,9 +159,64 @@ contract TukiFulfillableV1 is Initializable, OwnableUpgradeable, UUPSUpgradeable
     }
 
     /**
-     * @dev Withdraws the beneficiary's funds.
+     * @dev The fulfiller registers a fulfillment.
+     *
+     * We need to verify the amount of the fulfillment is actually available to release.
+     * Then we can enrich the result with an auto-incremental unique ID.
+     * and the timestamp when the record get inserted.
+     * After these verifications we can add the amount fulfilled to the release pool. 
+     * THen we persist this as a FulFillmentRecord to the blockchain.
+     *
+     * @param fulfillment the fulfillment result attached to it.
+     */
+    function registerFulfillment(FulFillmentResult memory fulfillment) public virtual onlyOwner {
+        require(_deposits[fulfillment.payer] >= fulfillment.weiAmount, "There is not enough balance to be released.");
+        _validateFulfillmentResult(fulfillment);
+        _releaseablePool = _releaseablePool.add(fulfillment.weiAmount);
+    }
+
+    /**
+     * @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
      */
     function beneficiaryWithdraw() public virtual {
-        beneficiary().sendValue(address(this).balance);
+        beneficiary().sendValue(_releaseablePool);
+    }
+
+    /**
+     * @dev Validate a fulfillment result and return a record to be persisted.
+     * 
+     * @param fulfillmentResult FulfillmentResult coming from the contract submition.
+     */
+    function _validateFulfillmentResult(FulFillmentResult memory fulfillmentResult) internal {
+        if(fulfillmentResult.status == FulFillmentResultState.FAILED) {
+            _authorizeRefund(fulfillmentResult.payer, fulfillmentResult.weiAmount);
+        } else if(fulfillmentResult.status != FulFillmentResultState.SUCCESS) {
+            // something weird happened. must better log this.
+            emit LogFailure("Fulfillment result was submitted with weird status");
+            revert();
+        } else {
+            // create a FulfillmentRecord
+            FulFillmentRecord memory fulfillmentRecord = FulFillmentRecord({
+                id: 0,
+                externalID: fulfillmentResult.id,
+                fulfiller: fulfillmentResult.fulfiller,
+                entryTime: block.timestamp,
+                payer: fulfillmentResult.payer,
+                weiAmount: fulfillmentResult.weiAmount,
+                receiptURI: fulfillmentResult.receiptURI
+            });
+            _fulfillmentIds.increment();
+            fulfillmentRecord.id = _fulfillmentIds.current();
+            _persistVerificationRecord(fulfillmentRecord);
+        }
+    }
+
+    /**
+    * Persists the fulfillment record to the state variable and mapps it by payer address.
+    */
+    function _persistVerificationRecord(FulFillmentRecord memory record) internal {
+        _fulfillmentRecordCount++;
+        _fulfillmentRecords[record.id] = record;
+        _fulfillmentRecordsForSubject[record.payer].push(record.id);
     }
 }

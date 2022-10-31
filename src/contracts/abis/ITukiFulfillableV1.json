@@ -1,0 +1,1592 @@
+{
+  "contractName": "ITukiFulfillableV1",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "payer",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "weiAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fiatAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "serviceRef",
+              "type": "bytes32"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct FulFillmentRequest",
+          "name": "request",
+          "type": "tuple"
+        }
+      ],
+      "name": "DepositReceived",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "name": "LogFailure",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "payee",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "weiAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "RefundAuthorized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "payee",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "weiAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "RefundWithdrawn",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "beneficiary",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "serviceID",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "payer",
+          "type": "address"
+        }
+      ],
+      "name": "depositsOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "payer",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "weiAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fiatAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "serviceRef",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct FulFillmentRequest",
+          "name": "fulfillmentRequest",
+          "type": "tuple"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "refundee",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawRefund",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "fulfiller",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "payer",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "weiAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "receiptURI",
+              "type": "string"
+            },
+            {
+              "internalType": "enum FulFillmentResultState",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct FulFillmentResult",
+          "name": "fulfillment",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerFulfillment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "beneficiaryWithdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"payer\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"weiAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"fiatAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"serviceRef\",\"type\":\"bytes32\"}],\"indexed\":false,\"internalType\":\"struct FulFillmentRequest\",\"name\":\"request\",\"type\":\"tuple\"}],\"name\":\"DepositReceived\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"LogFailure\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"payee\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"weiAmount\",\"type\":\"uint256\"}],\"name\":\"RefundAuthorized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"payee\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"weiAmount\",\"type\":\"uint256\"}],\"name\":\"RefundWithdrawn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"beneficiary\",\"outputs\":[{\"internalType\":\"address payable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"beneficiaryWithdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"payer\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"weiAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"fiatAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"serviceRef\",\"type\":\"bytes32\"}],\"internalType\":\"struct FulFillmentRequest\",\"name\":\"fulfillmentRequest\",\"type\":\"tuple\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"payer\",\"type\":\"address\"}],\"name\":\"depositsOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"fulfiller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"payer\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"weiAmount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"receiptURI\",\"type\":\"string\"},{\"internalType\":\"enum FulFillmentResultState\",\"name\":\"status\",\"type\":\"uint8\"}],\"internalType\":\"struct FulFillmentResult\",\"name\":\"fulfillment\",\"type\":\"tuple\"}],\"name\":\"registerFulfillment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"serviceID\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address payable\",\"name\":\"refundee\",\"type\":\"address\"}],\"name\":\"withdrawRefund\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Interface defining basic functionality for the Fulfillable Contract\",\"kind\":\"dev\",\"methods\":{\"beneficiary()\":{\"returns\":{\"_0\":\"The beneficiary of the escrow.\"}},\"beneficiaryWithdraw()\":{\"details\":\"Withdraws the beneficiary's funds.\"},\"deposit((address,uint256,uint256,bytes32))\":{\"details\":\"Stores the sent amount as credit to be claimed.\",\"params\":{\"fulfillmentRequest\":\"The destination address of the funds.\"}},\"depositsOf(address)\":{\"returns\":{\"_0\":\"Total deposits from a payer\"}},\"registerFulfillment((uint256,address,address,uint256,string,uint8))\":{\"details\":\"The fulfiller registers a fulfillment.\",\"params\":{\"fulfillment\":\"the fulfillment result attached to it.\"}},\"serviceID()\":{\"returns\":{\"_0\":\"The service ID of the escrow.\"}},\"withdrawRefund(address)\":{\"details\":\"Refund accumulated balance for a refundee, forwarding all gas to the recipient. WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities. Make sure you trust the recipient, or are either following the checks-effects-interactions pattern or using {ReentrancyGuard}.\",\"params\":{\"refundee\":\"The address whose funds will be withdrawn and transferred to.\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/src/contracts/ITukiFulfillableV1.sol\":\"ITukiFulfillableV1\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/src/contracts/ITukiFulfillableV1.sol\":{\"keccak256\":\"0x75a25c9f8f51c81d991af7d6985a3d80ef8fb910d4c7dd507258c6e7637df646\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://450eb332efa3049d5b850fc9469356482fbc00062259c6c3c82499684fc8e9fb\",\"dweb:/ipfs/QmNaUAzdeqnVWUmdm42X6Y5QdKW4tfMMbubnUzcdpMsAXV\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "immutableReferences": {},
+  "generatedSources": [],
+  "deployedGeneratedSources": [],
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "\n// Inspired in:\n// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)\n// CENTRE HQ verite/packages/contract/contracts/IVerificationRegistry.sol\n\n/**\n * SPDX-License-Identifier: MIT\n *\n * Permission is hereby granted, free of charge, to any person obtaining a copy\n * of this software and associated documentation files (the \"Software\"), to deal\n * in the Software without restriction, including without limitation the rights\n * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n * copies of the Software, and to permit persons to whom the Software is\n * furnished to do so, subject to the following conditions:\n *\n * The above copyright notice and this permission notice shall be included in\n * copies or substantial portions of the Software.\n *\n * THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n * SOFTWARE.\n */\npragma solidity ^0.8.17;\n\n/**\n* enum with states for fulfillment results.\n */\nenum FulFillmentResultState {\n    FAILED,\n    SUCCESS\n}\n\n/**\n* @dev The fulfiller will accept FulfillmentResults submitted to it,\n* and if valid, will persist them on-chain as FulfillmentRecords\n*/\nstruct FulFillmentRecord {\n    uint256 id; // auto-incremental, generated in contract\n    address fulfiller;\n    uint256 externalID; // id coming from the fulfiller as proof.\n    address payer; // address of payer\n    uint256 weiAmount; // address of the subject, the recipient of a successful verification\n    uint256 entryTime; // time at which the fulfillment was submitted\n    string receiptURI; // the fulfillment external receipt uri.\n}\n\n/**\n* @dev A fulfiller will submit a fulfillment result in this format.\n*/\nstruct FulFillmentResult {\n    uint256 id; // id coming from the fulfiller as proof.\n    address fulfiller; //address of the fulfiller that initiated the rsult\n    address payer; // address of payer\n    uint256 weiAmount; // address of the subject, the recipient of a successful verification\n    string receiptURI; // the fulfillment external receipt uri. \n    FulFillmentResultState status;   \n}\n\n/**\n* @dev Anybody can submit a fulfillment request through a router.\n*/\nstruct FulFillmentRequest {\n    address payer; // address of payer\n    uint256 weiAmount; // address of the subject, the recipient of a successful verification\n    uint256 fiatAmount; // fiat amount to be charged for the fufillable\n    bytes32 serviceRef; // identifier required to route the payment to the user's destination\n}\n\n/**\n* @dev Interface defining basic functionality for the Fulfillable Contract\n */\ninterface ITukiFulfillableV1 {\n\n    /**********************/\n    /* EVENT DECLARATIONS */\n    /**********************/\n\n    event DepositReceived(FulFillmentRequest request);\n    event RefundWithdrawn(address indexed payee, uint256 weiAmount);\n    event RefundAuthorized(address indexed payee, uint256 weiAmount);\n    event LogFailure(string message);\n\n    /*****************************/\n    /* FULFILLER LOGIC           */\n    /*****************************/\n\n    /**\n     * @return The beneficiary of the escrow.\n     */\n    function beneficiary() external view returns (address payable);\n    /**\n     * @return The service ID of the escrow.\n     */\n    function serviceID() external view returns (uint256);\n\n    /**\n     * @return Total deposits from a payer\n     */\n    function depositsOf(address payer) external view returns (uint256);\n\n    /**\n     * @dev Stores the sent amount as credit to be claimed.\n     * @param fulfillmentRequest The destination address of the funds.\n     */\n    function deposit(FulFillmentRequest memory fulfillmentRequest) external payable;\n\n    /**\n     * @dev Refund accumulated balance for a refundee, forwarding all gas to the\n     * recipient.\n     *\n     * WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.\n     * Make sure you trust the recipient, or are either following the\n     * checks-effects-interactions pattern or using {ReentrancyGuard}.\n     *\n     * @param refundee The address whose funds will be withdrawn and transferred to.\n     */\n    function withdrawRefund(address payable refundee) external;\n\n    /**\n     * @dev Allows for refunds to take place.\n     *\n     * @param refundee the address authorized for refunds\n     * @param weiAmount the amount to be refunded if authorized.\n     */\n    //function authorizeRefund(address refundee, uint256 weiAmount) external;\n\n    /**\n     * @dev The fulfiller registers a fulfillment.\n     *\n     * @param fulfillment the fulfillment result attached to it.\n     */\n    function registerFulfillment(FulFillmentResult memory fulfillment) external;\n\n    /**\n     * @dev Withdraws the beneficiary's funds.\n     */\n    function beneficiaryWithdraw() external;\n}",
+  "sourcePath": "/Users/luisoscargabriel/tuki-org/contracts/src/contracts/ITukiFulfillableV1.sol",
+  "ast": {
+    "absolutePath": "project:/src/contracts/ITukiFulfillableV1.sol",
+    "exportedSymbols": {
+      "FulFillmentRecord": [
+        1754
+      ],
+      "FulFillmentRequest": [
+        1777
+      ],
+      "FulFillmentResult": [
+        1768
+      ],
+      "FulFillmentResultState": [
+        1739
+      ],
+      "ITukiFulfillableV1": [
+        1844
+      ]
+    },
+    "id": 1845,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1736,
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".17"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "1262:24:13"
+      },
+      {
+        "canonicalName": "FulFillmentResultState",
+        "id": 1739,
+        "members": [
+          {
+            "id": 1737,
+            "name": "FAILED",
+            "nameLocation": "1374:6:13",
+            "nodeType": "EnumValue",
+            "src": "1374:6:13"
+          },
+          {
+            "id": 1738,
+            "name": "SUCCESS",
+            "nameLocation": "1386:7:13",
+            "nodeType": "EnumValue",
+            "src": "1386:7:13"
+          }
+        ],
+        "name": "FulFillmentResultState",
+        "nameLocation": "1345:22:13",
+        "nodeType": "EnumDefinition",
+        "src": "1340:55:13"
+      },
+      {
+        "canonicalName": "FulFillmentRecord",
+        "id": 1754,
+        "members": [
+          {
+            "constant": false,
+            "id": 1741,
+            "mutability": "mutable",
+            "name": "id",
+            "nameLocation": "1577:2:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1569:10:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1740,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1569:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1743,
+            "mutability": "mutable",
+            "name": "fulfiller",
+            "nameLocation": "1636:9:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1628:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 1742,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "1628:7:13",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1745,
+            "mutability": "mutable",
+            "name": "externalID",
+            "nameLocation": "1659:10:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1651:18:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1744,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1651:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1747,
+            "mutability": "mutable",
+            "name": "payer",
+            "nameLocation": "1725:5:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1717:13:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 1746,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "1717:7:13",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1749,
+            "mutability": "mutable",
+            "name": "weiAmount",
+            "nameLocation": "1764:9:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1756:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1748,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1756:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1751,
+            "mutability": "mutable",
+            "name": "entryTime",
+            "nameLocation": "1857:9:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1849:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1750,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1849:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1753,
+            "mutability": "mutable",
+            "name": "receiptURI",
+            "nameLocation": "1926:10:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1754,
+            "src": "1919:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_storage_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 1752,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "1919:6:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "name": "FulFillmentRecord",
+        "nameLocation": "1545:17:13",
+        "nodeType": "StructDefinition",
+        "scope": 1845,
+        "src": "1538:442:13",
+        "visibility": "public"
+      },
+      {
+        "canonicalName": "FulFillmentResult",
+        "id": 1768,
+        "members": [
+          {
+            "constant": false,
+            "id": 1756,
+            "mutability": "mutable",
+            "name": "id",
+            "nameLocation": "2096:2:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1768,
+            "src": "2088:10:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1755,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "2088:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1758,
+            "mutability": "mutable",
+            "name": "fulfiller",
+            "nameLocation": "2154:9:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1768,
+            "src": "2146:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 1757,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "2146:7:13",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1760,
+            "mutability": "mutable",
+            "name": "payer",
+            "nameLocation": "2229:5:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1768,
+            "src": "2221:13:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 1759,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "2221:7:13",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1762,
+            "mutability": "mutable",
+            "name": "weiAmount",
+            "nameLocation": "2268:9:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1768,
+            "src": "2260:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1761,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "2260:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1764,
+            "mutability": "mutable",
+            "name": "receiptURI",
+            "nameLocation": "2360:10:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1768,
+            "src": "2353:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_storage_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 1763,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "2353:6:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1767,
+            "mutability": "mutable",
+            "name": "status",
+            "nameLocation": "2441:6:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1768,
+            "src": "2418:29:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_enum$_FulFillmentResultState_$1739",
+              "typeString": "enum FulFillmentResultState"
+            },
+            "typeName": {
+              "id": 1766,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 1765,
+                "name": "FulFillmentResultState",
+                "nameLocations": [
+                  "2418:22:13"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 1739,
+                "src": "2418:22:13"
+              },
+              "referencedDeclaration": 1739,
+              "src": "2418:22:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_enum$_FulFillmentResultState_$1739",
+                "typeString": "enum FulFillmentResultState"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "name": "FulFillmentResult",
+        "nameLocation": "2064:17:13",
+        "nodeType": "StructDefinition",
+        "scope": 1845,
+        "src": "2057:396:13",
+        "visibility": "public"
+      },
+      {
+        "canonicalName": "FulFillmentRequest",
+        "id": 1777,
+        "members": [
+          {
+            "constant": false,
+            "id": 1770,
+            "mutability": "mutable",
+            "name": "payer",
+            "nameLocation": "2568:5:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1777,
+            "src": "2560:13:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 1769,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "2560:7:13",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1772,
+            "mutability": "mutable",
+            "name": "weiAmount",
+            "nameLocation": "2607:9:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1777,
+            "src": "2599:17:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1771,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "2599:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1774,
+            "mutability": "mutable",
+            "name": "fiatAmount",
+            "nameLocation": "2700:10:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1777,
+            "src": "2692:18:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 1773,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "2692:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 1776,
+            "mutability": "mutable",
+            "name": "serviceRef",
+            "nameLocation": "2772:10:13",
+            "nodeType": "VariableDeclaration",
+            "scope": 1777,
+            "src": "2764:18:13",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bytes32",
+              "typeString": "bytes32"
+            },
+            "typeName": {
+              "id": 1775,
+              "name": "bytes32",
+              "nodeType": "ElementaryTypeName",
+              "src": "2764:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes32",
+                "typeString": "bytes32"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "name": "FulFillmentRequest",
+        "nameLocation": "2535:18:13",
+        "nodeType": "StructDefinition",
+        "scope": 1845,
+        "src": "2528:327:13",
+        "visibility": "public"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "ITukiFulfillableV1",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": {
+          "id": 1778,
+          "nodeType": "StructuredDocumentation",
+          "src": "2857:82:13",
+          "text": " @dev Interface defining basic functionality for the Fulfillable Contract"
+        },
+        "fullyImplemented": false,
+        "id": 1844,
+        "linearizedBaseContracts": [
+          1844
+        ],
+        "name": "ITukiFulfillableV1",
+        "nameLocation": "2950:18:13",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "anonymous": false,
+            "eventSelector": "2994aa7d7eee77283abd22035c142faaa9e7e6a59a4c04f5f241ed8afbb57a28",
+            "id": 1783,
+            "name": "DepositReceived",
+            "nameLocation": "3070:15:13",
+            "nodeType": "EventDefinition",
+            "parameters": {
+              "id": 1782,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1781,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "request",
+                  "nameLocation": "3105:7:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1783,
+                  "src": "3086:26:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_FulFillmentRequest_$1777_memory_ptr",
+                    "typeString": "struct FulFillmentRequest"
+                  },
+                  "typeName": {
+                    "id": 1780,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 1779,
+                      "name": "FulFillmentRequest",
+                      "nameLocations": [
+                        "3086:18:13"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 1777,
+                      "src": "3086:18:13"
+                    },
+                    "referencedDeclaration": 1777,
+                    "src": "3086:18:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_FulFillmentRequest_$1777_storage_ptr",
+                      "typeString": "struct FulFillmentRequest"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3085:28:13"
+            },
+            "src": "3064:50:13"
+          },
+          {
+            "anonymous": false,
+            "eventSelector": "3d97f39b86d061200a7834082f5926e58ec10fd85a9d6930f497729d5e6cc35c",
+            "id": 1789,
+            "name": "RefundWithdrawn",
+            "nameLocation": "3125:15:13",
+            "nodeType": "EventDefinition",
+            "parameters": {
+              "id": 1788,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1785,
+                  "indexed": true,
+                  "mutability": "mutable",
+                  "name": "payee",
+                  "nameLocation": "3157:5:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1789,
+                  "src": "3141:21:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1784,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3141:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 1787,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "weiAmount",
+                  "nameLocation": "3172:9:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1789,
+                  "src": "3164:17:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 1786,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3164:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3140:42:13"
+            },
+            "src": "3119:64:13"
+          },
+          {
+            "anonymous": false,
+            "eventSelector": "7fd36617a06b55977ffa06f8dc94b5ec0650c2b7b353fa22c7d0f211284dc749",
+            "id": 1795,
+            "name": "RefundAuthorized",
+            "nameLocation": "3194:16:13",
+            "nodeType": "EventDefinition",
+            "parameters": {
+              "id": 1794,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1791,
+                  "indexed": true,
+                  "mutability": "mutable",
+                  "name": "payee",
+                  "nameLocation": "3227:5:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1795,
+                  "src": "3211:21:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1790,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3211:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 1793,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "weiAmount",
+                  "nameLocation": "3242:9:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1795,
+                  "src": "3234:17:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 1792,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3234:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3210:42:13"
+            },
+            "src": "3188:65:13"
+          },
+          {
+            "anonymous": false,
+            "eventSelector": "a2db52a45d71264723caeac03c235d51bb30cff5e1ac71c97a5842ec94fbb6af",
+            "id": 1799,
+            "name": "LogFailure",
+            "nameLocation": "3264:10:13",
+            "nodeType": "EventDefinition",
+            "parameters": {
+              "id": 1798,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1797,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "message",
+                  "nameLocation": "3282:7:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1799,
+                  "src": "3275:14:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 1796,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3275:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3274:16:13"
+            },
+            "src": "3258:33:13"
+          },
+          {
+            "documentation": {
+              "id": 1800,
+              "nodeType": "StructuredDocumentation",
+              "src": "3406:57:13",
+              "text": " @return The beneficiary of the escrow."
+            },
+            "functionSelector": "38af3eed",
+            "id": 1805,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "beneficiary",
+            "nameLocation": "3477:11:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1801,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3488:2:13"
+            },
+            "returnParameters": {
+              "id": 1804,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1803,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1805,
+                  "src": "3514:15:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address_payable",
+                    "typeString": "address payable"
+                  },
+                  "typeName": {
+                    "id": 1802,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3514:15:13",
+                    "stateMutability": "payable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address_payable",
+                      "typeString": "address payable"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3513:17:13"
+            },
+            "scope": 1844,
+            "src": "3468:63:13",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 1806,
+              "nodeType": "StructuredDocumentation",
+              "src": "3536:56:13",
+              "text": " @return The service ID of the escrow."
+            },
+            "functionSelector": "34a4b877",
+            "id": 1811,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "serviceID",
+            "nameLocation": "3606:9:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1807,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3615:2:13"
+            },
+            "returnParameters": {
+              "id": 1810,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1809,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1811,
+                  "src": "3641:7:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 1808,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3641:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3640:9:13"
+            },
+            "scope": 1844,
+            "src": "3597:53:13",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 1812,
+              "nodeType": "StructuredDocumentation",
+              "src": "3656:54:13",
+              "text": " @return Total deposits from a payer"
+            },
+            "functionSelector": "e3a9db1a",
+            "id": 1819,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "depositsOf",
+            "nameLocation": "3724:10:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1815,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1814,
+                  "mutability": "mutable",
+                  "name": "payer",
+                  "nameLocation": "3743:5:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1819,
+                  "src": "3735:13:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1813,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3735:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3734:15:13"
+            },
+            "returnParameters": {
+              "id": 1818,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1817,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1819,
+                  "src": "3773:7:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 1816,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3773:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3772:9:13"
+            },
+            "scope": 1844,
+            "src": "3715:67:13",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 1820,
+              "nodeType": "StructuredDocumentation",
+              "src": "3788:142:13",
+              "text": " @dev Stores the sent amount as credit to be claimed.\n @param fulfillmentRequest The destination address of the funds."
+            },
+            "functionSelector": "355195f6",
+            "id": 1826,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "deposit",
+            "nameLocation": "3944:7:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1824,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1823,
+                  "mutability": "mutable",
+                  "name": "fulfillmentRequest",
+                  "nameLocation": "3978:18:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1826,
+                  "src": "3952:44:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_FulFillmentRequest_$1777_memory_ptr",
+                    "typeString": "struct FulFillmentRequest"
+                  },
+                  "typeName": {
+                    "id": 1822,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 1821,
+                      "name": "FulFillmentRequest",
+                      "nameLocations": [
+                        "3952:18:13"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 1777,
+                      "src": "3952:18:13"
+                    },
+                    "referencedDeclaration": 1777,
+                    "src": "3952:18:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_FulFillmentRequest_$1777_storage_ptr",
+                      "typeString": "struct FulFillmentRequest"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3951:46:13"
+            },
+            "returnParameters": {
+              "id": 1825,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4014:0:13"
+            },
+            "scope": 1844,
+            "src": "3935:80:13",
+            "stateMutability": "payable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 1827,
+              "nodeType": "StructuredDocumentation",
+              "src": "4021:431:13",
+              "text": " @dev Refund accumulated balance for a refundee, forwarding all gas to the\n recipient.\n WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.\n Make sure you trust the recipient, or are either following the\n checks-effects-interactions pattern or using {ReentrancyGuard}.\n @param refundee The address whose funds will be withdrawn and transferred to."
+            },
+            "functionSelector": "a16c86f7",
+            "id": 1832,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "withdrawRefund",
+            "nameLocation": "4466:14:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1830,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1829,
+                  "mutability": "mutable",
+                  "name": "refundee",
+                  "nameLocation": "4497:8:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1832,
+                  "src": "4481:24:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address_payable",
+                    "typeString": "address payable"
+                  },
+                  "typeName": {
+                    "id": 1828,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4481:15:13",
+                    "stateMutability": "payable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address_payable",
+                      "typeString": "address payable"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4480:26:13"
+            },
+            "returnParameters": {
+              "id": 1831,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4515:0:13"
+            },
+            "scope": 1844,
+            "src": "4457:59:13",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 1833,
+              "nodeType": "StructuredDocumentation",
+              "src": "4793:134:13",
+              "text": " @dev The fulfiller registers a fulfillment.\n @param fulfillment the fulfillment result attached to it."
+            },
+            "functionSelector": "e5794457",
+            "id": 1839,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "registerFulfillment",
+            "nameLocation": "4941:19:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1837,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1836,
+                  "mutability": "mutable",
+                  "name": "fulfillment",
+                  "nameLocation": "4986:11:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1839,
+                  "src": "4961:36:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_FulFillmentResult_$1768_memory_ptr",
+                    "typeString": "struct FulFillmentResult"
+                  },
+                  "typeName": {
+                    "id": 1835,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 1834,
+                      "name": "FulFillmentResult",
+                      "nameLocations": [
+                        "4961:17:13"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 1768,
+                      "src": "4961:17:13"
+                    },
+                    "referencedDeclaration": 1768,
+                    "src": "4961:17:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_FulFillmentResult_$1768_storage_ptr",
+                      "typeString": "struct FulFillmentResult"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4960:38:13"
+            },
+            "returnParameters": {
+              "id": 1838,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "5007:0:13"
+            },
+            "scope": 1844,
+            "src": "4932:76:13",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "documentation": {
+              "id": 1840,
+              "nodeType": "StructuredDocumentation",
+              "src": "5014:58:13",
+              "text": " @dev Withdraws the beneficiary's funds."
+            },
+            "functionSelector": "9af6549a",
+            "id": 1843,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "beneficiaryWithdraw",
+            "nameLocation": "5086:19:13",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 1841,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "5105:2:13"
+            },
+            "returnParameters": {
+              "id": 1842,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "5116:0:13"
+            },
+            "scope": 1844,
+            "src": "5077:40:13",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 1845,
+        "src": "2940:2179:13",
+        "usedErrors": []
+      }
+    ],
+    "src": "1262:3857:13"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.8.17+commit.8df45f5f.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.4.10",
+  "updatedAt": "2022-10-31T05:18:05.462Z",
+  "devdoc": {
+    "details": "Interface defining basic functionality for the Fulfillable Contract",
+    "kind": "dev",
+    "methods": {
+      "beneficiary()": {
+        "returns": {
+          "_0": "The beneficiary of the escrow."
+        }
+      },
+      "beneficiaryWithdraw()": {
+        "details": "Withdraws the beneficiary's funds."
+      },
+      "deposit((address,uint256,uint256,bytes32))": {
+        "details": "Stores the sent amount as credit to be claimed.",
+        "params": {
+          "fulfillmentRequest": "The destination address of the funds."
+        }
+      },
+      "depositsOf(address)": {
+        "returns": {
+          "_0": "Total deposits from a payer"
+        }
+      },
+      "registerFulfillment((uint256,address,address,uint256,string,uint8))": {
+        "details": "The fulfiller registers a fulfillment.",
+        "params": {
+          "fulfillment": "the fulfillment result attached to it."
+        }
+      },
+      "serviceID()": {
+        "returns": {
+          "_0": "The service ID of the escrow."
+        }
+      },
+      "withdrawRefund(address)": {
+        "details": "Refund accumulated balance for a refundee, forwarding all gas to the recipient. WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities. Make sure you trust the recipient, or are either following the checks-effects-interactions pattern or using {ReentrancyGuard}.",
+        "params": {
+          "refundee": "The address whose funds will be withdrawn and transferred to."
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  }
+}

@@ -27,13 +27,22 @@
 pragma solidity ^0.8.17;
 
 /**
+* enum with states for fulfillment results.
+ */
+enum FulFillmentResultState {
+    FAILED,
+    SUCCESS
+}
+
+/**
 * @dev The fulfiller will accept FulfillmentResults submitted to it,
 * and if valid, will persist them on-chain as FulfillmentRecords
 */
 struct FulFillmentRecord {
     uint256 id; // auto-incremental, generated in contract
+    address fulfiller;
     uint256 externalID; // id coming from the fulfiller as proof.
-    address payable payer; // address of payer
+    address payer; // address of payer
     uint256 weiAmount; // address of the subject, the recipient of a successful verification
     uint256 entryTime; // time at which the fulfillment was submitted
     string receiptURI; // the fulfillment external receipt uri.
@@ -44,9 +53,21 @@ struct FulFillmentRecord {
 */
 struct FulFillmentResult {
     uint256 id; // id coming from the fulfiller as proof.
+    address fulfiller; //address of the fulfiller that initiated the rsult
     address payer; // address of payer
     uint256 weiAmount; // address of the subject, the recipient of a successful verification
-    string receiptURI; // the fulfillment external receipt uri.
+    string receiptURI; // the fulfillment external receipt uri. 
+    FulFillmentResultState status;   
+}
+
+/**
+* @dev Anybody can submit a fulfillment request through a router.
+*/
+struct FulFillmentRequest {
+    address payer; // address of payer
+    uint256 weiAmount; // address of the subject, the recipient of a successful verification
+    uint256 fiatAmount; // fiat amount to be charged for the fufillable
+    bytes32 serviceRef; // identifier required to route the payment to the user's destination
 }
 
 /**
@@ -58,9 +79,10 @@ interface ITukiFulfillableV1 {
     /* EVENT DECLARATIONS */
     /**********************/
 
-    event DepositReceived(address indexed payee, uint256 weiAmount);
+    event DepositReceived(FulFillmentRequest request);
     event RefundWithdrawn(address indexed payee, uint256 weiAmount);
     event RefundAuthorized(address indexed payee, uint256 weiAmount);
+    event LogFailure(string message);
 
     /*****************************/
     /* FULFILLER LOGIC           */
@@ -82,9 +104,9 @@ interface ITukiFulfillableV1 {
 
     /**
      * @dev Stores the sent amount as credit to be claimed.
-     * @param payer The destination address of the funds.
+     * @param fulfillmentRequest The destination address of the funds.
      */
-    function deposit(address payer) external payable;
+    function deposit(FulFillmentRequest memory fulfillmentRequest) external payable;
 
     /**
      * @dev Refund accumulated balance for a refundee, forwarding all gas to the
@@ -102,9 +124,9 @@ interface ITukiFulfillableV1 {
      * @dev Allows for refunds to take place.
      *
      * @param refundee the address authorized for refunds
-     * @param fulfillment the fulfillment record attached to it.
+     * @param weiAmount the amount to be refunded if authorized.
      */
-    function authorizeRefund(address payable refundee, FulFillmentRecord memory fulfillment) external;
+    //function authorizeRefund(address refundee, uint256 weiAmount) external;
 
     /**
      * @dev The fulfiller registers a fulfillment.

@@ -15,7 +15,7 @@ import "./IIdentifierValidator.sol";
  * Any valid address can request a fulfillment to a valid fulfillable.
  * -----------------------
  */
-contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
+contract TukiFulfillableRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using AddressUpgradeable for address payable;
     using SafeMathUpgradeable for uint256;
 
