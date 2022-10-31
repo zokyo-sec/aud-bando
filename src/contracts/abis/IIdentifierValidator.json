@@ -35,15 +35,15 @@
     "absolutePath": "project:/src/contracts/IIdentifierValidator.sol",
     "exportedSymbols": {
       "IIdentifierValidator": [
-        1734
+        2476
       ]
     },
-    "id": 1735,
+    "id": 2477,
     "license": "MIT",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1726,
+        "id": 2468,
         "literals": [
           "solidity",
           "^",
@@ -51,7 +51,7 @@
           ".17"
         ],
         "nodeType": "PragmaDirective",
-        "src": "32:24:12"
+        "src": "32:24:16"
       },
       {
         "abstract": false,
@@ -60,36 +60,36 @@
         "contractDependencies": [],
         "contractKind": "interface",
         "fullyImplemented": false,
-        "id": 1734,
+        "id": 2476,
         "linearizedBaseContracts": [
-          1734
+          2476
         ],
         "name": "IIdentifierValidator",
-        "nameLocation": "68:20:12",
+        "nameLocation": "68:20:16",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "functionSelector": "32ac752b",
-            "id": 1733,
+            "id": 2475,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "matches",
-            "nameLocation": "104:7:12",
+            "nameLocation": "104:7:16",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 1729,
+              "id": 2471,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 1728,
+                  "id": 2470,
                   "mutability": "mutable",
                   "name": "input",
-                  "nameLocation": "126:5:12",
+                  "nameLocation": "126:5:16",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1733,
-                  "src": "112:19:12",
+                  "scope": 2475,
+                  "src": "112:19:16",
                   "stateVariable": false,
                   "storageLocation": "memory",
                   "typeDescriptions": {
@@ -97,10 +97,10 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 1727,
+                    "id": 2469,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
-                    "src": "112:6:12",
+                    "src": "112:6:16",
                     "typeDescriptions": {
                       "typeIdentifier": "t_string_storage_ptr",
                       "typeString": "string"
@@ -109,21 +109,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "111:21:12"
+              "src": "111:21:16"
             },
             "returnParameters": {
-              "id": 1732,
+              "id": 2474,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 1731,
+                  "id": 2473,
                   "mutability": "mutable",
                   "name": "",
                   "nameLocation": "-1:-1:-1",
                   "nodeType": "VariableDeclaration",
-                  "scope": 1733,
-                  "src": "156:4:12",
+                  "scope": 2475,
+                  "src": "156:4:16",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -131,10 +131,10 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 1730,
+                    "id": 2472,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
-                    "src": "156:4:12",
+                    "src": "156:4:16",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -143,21 +143,21 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "155:6:12"
+              "src": "155:6:16"
             },
-            "scope": 1734,
-            "src": "95:67:12",
+            "scope": 2476,
+            "src": "95:67:16",
             "stateMutability": "pure",
             "virtual": false,
             "visibility": "external"
           }
         ],
-        "scope": 1735,
-        "src": "58:106:12",
+        "scope": 2477,
+        "src": "58:106:16",
         "usedErrors": []
       }
     ],
-    "src": "32:133:12"
+    "src": "32:133:16"
   },
   "compiler": {
     "name": "solc",
@@ -165,7 +165,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.10",
-  "updatedAt": "2022-10-31T05:18:05.459Z",
+  "updatedAt": "2022-10-31T08:29:10.962Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
