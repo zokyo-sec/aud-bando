@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -8,7 +8,9 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./IIdentifierValidator.sol";
-import "./TukiFulFillableV1.sol";
+import "./ITukiFulfillable.sol";
+import "./TukiFulfillableV1.sol";
+
 
 
 /**
@@ -21,13 +23,11 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     using AddressUpgradeable for address payable;
     using SafeMathUpgradeable for uint256;
 
-    mapping(uint256 => TukiFulfillableV1) private _services;
+    TukiFulfillableV1 private _escrow;
+    mapping(uint256 => address) private _services;
     mapping(uint256 => address) private _validators;
 
-    event ServiceRequested(
-        uint256 serviceID,
-        FulFillmentRequest request
-    );
+    event ServiceRequested(uint256 serviceID, FulFillmentRequest request);
     event RefValidationFailed(uint256 serviceID, string serviceRef);
     event ServiceAdded(uint256 serviceID, address escrow, address validator);
   
@@ -72,26 +72,23 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
      * 
      * Post-conditions:
      * 
-     * - DepositReceived Event emitted
+     * - DepositReceived Event emitted by the underlying contract.
      * - payment due is trasferred to escrow contract until fulfillment
      */
-    function requestService(uint256 serviceID, FulFillmentRequest memory request) 
-        public 
-        payable
-        whenNotPaused
-        returns (bool)
+    function requestService(
+        uint256 serviceID, FulFillmentRequest memory request) public payable whenNotPaused returns (bool)
     {
-        uint256 total_amount = request.weiAmount.add(request.feeAmount);
-        require(total_amount >= 0, "Amount is invalid");
-        require(request.fiatAmount >= 0, "Fiat amount is invalid");
-        require(total_amount == msg.value, "Fee and wei amount dont match value");
+        require(msg.value > 0, "Amount must be greater than zero");
+        require(request.fiatAmount > 0, "Fiat amount is invalid");
         require(address(_services[serviceID]) != address(0), "Service ID is not supported");
         require(address(_validators[serviceID]) != address(0), "Validator not found for service ID");
+        uint256 total_amount = request.weiAmount.add(ITukiFulfillable(_services[serviceID]).feeAmount());
+        require(msg.value == total_amount, "Transaction total does not match fee + amount.");
         require(
             IIdentifierValidator(_validators[serviceID]).matches(request.serviceRef),
             "The service identifier failed to validate"
         );
-        _services[serviceID].deposit{value: msg.value}(request);
+        ITukiFulfillable(_services[serviceID]).deposit{value: msg.value}(request);
         return true;
     }
 
@@ -103,6 +100,15 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         require(address(_services[serviceID]) != address(0), "Service ID is not supported.");
         require(address(_validators[serviceID]) != address(0), "Validator not found for service ID.");
         return [address(_services[serviceID]), _validators[serviceID]];
+    }
+
+    /**
+     * @return the fee amount for the service ID of a particular service.
+     *
+     */
+    function feeOf(uint256 serviceID) public view returns (uint256) {
+        require(address(_services[serviceID]) != address(0), "Service ID is not supported.");
+        return ITukiFulfillable(_services[serviceID]).feeAmount();
     }
 
     /**
@@ -118,8 +124,9 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
      */
     function setService(
         uint256 serviceID,
+        address payable beneficiaryAddress,
         address validator,
-        address payable beneficiary
+        uint256 feeAmount
     ) 
         public 
         virtual 
@@ -128,11 +135,25 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     {
         require(serviceID > 0, "Service ID is invalid");
         require(address(validator) != address(0), "Validator address is required");
-        TukiFulfillableV1 escrow = new TukiFulfillableV1(beneficiary, serviceID);
-        _services[serviceID] = escrow;
+        _escrow = new TukiFulfillableV1(beneficiaryAddress, serviceID, feeAmount);
+        _services[serviceID] = address(_escrow);
         _validators[serviceID] = validator;
-        address escrowAddress = address(_services[serviceID]);
-        emit ServiceAdded(serviceID, escrowAddress, validator);
-        return [escrowAddress, _validators[serviceID]];
+        emit ServiceAdded(serviceID, _services[serviceID], validator);
+        return [_services[serviceID], _validators[serviceID]];
     }
+
+    /**
+    * @dev setFee
+    * Sets the fee for a valid escrow contract
+    * 
+    * emits a FeeUpdated event from the underlying escrow contract.
+    * @return uint256
+    */
+    function setFee(uint256 serviceID, uint256 feeAmount) public virtual onlyOwner returns (uint256) {
+        require(serviceID > 0, "Service ID is invalid");
+        require(feeAmount >= 0, "Fee Amount is invalid");
+        ITukiFulfillable(_services[serviceID]).setFee(feeAmount);
+        return feeAmount;
+    }
+    
 }

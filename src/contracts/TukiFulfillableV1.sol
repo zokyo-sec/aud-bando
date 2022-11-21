@@ -8,54 +8,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./ITukiFulfillable.sol";
 
-
-/**
-* enum with states for fulfillment results.
- */
-enum FulFillmentResultState {
-    FAILED,
-    SUCCESS
-}
-
-/**
-* @dev The fulfiller will accept FulfillmentResults submitted to it,
-* and if valid, will persist them on-chain as FulfillmentRecords
-*/
-struct FulFillmentRecord {
-    uint256 id; // auto-incremental, generated in contract
-    address fulfiller;
-    uint256 externalID; // id coming from the fulfiller as proof.
-    address payer; // address of payer
-    uint256 weiAmount; // address of the subject, the recipient of a successful verification
-    uint256 feeAmount; // feeAmount charged in wei
-    uint256 entryTime; // time at which the fulfillment was submitted
-    string receiptURI; // the fulfillment external receipt uri.
-}
-
-/**
-* @dev A fulfiller will submit a fulfillment result in this format.
-*/
-struct FulFillmentResult {
-    uint256 id; // id coming from the fulfiller as proof.
-    address fulfiller; //address of the fulfiller that initiated the rsult
-    address payer; // address of payer
-    uint256 weiAmount; // address of the subject, the recipient of a successful verification
-    uint256 feeAmount; // feeAmount charged in wei
-    string receiptURI; // the fulfillment external receipt uri. 
-    FulFillmentResultState status;   
-}
-
-/**
-* @dev Anybody can submit a fulfillment request through a router.
-*/
-struct FulFillmentRequest {
-    address payer; // address of payer
-    uint256 weiAmount; // address of the subject, the recipient of a successful verification
-    uint256 fiatAmount; // fiat amount to be charged for the fufillable
-    uint256 feeAmount; // fee amount in wei
-    string serviceRef; // identifier required to route the payment to the user's destination
-}
 
 /**
  * @title TukiFulfillableV1
@@ -70,7 +24,7 @@ struct FulFillmentRequest {
  * payment method should be its owner, and provide public methods redirecting
  * to the escrow's deposit and withdraw.
  */
-contract TukiFulfillableV1 is Ownable {
+contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
     using Address for address payable;
     using SafeMath for uint256;
     using Counters for Counters.Counter;
@@ -83,6 +37,7 @@ contract TukiFulfillableV1 is Ownable {
     event RefundWithdrawn(address indexed payee, uint256 weiAmount);
     event RefundAuthorized(address indexed payee, uint256 weiAmount);
     event LogFailure(string message);
+    event FeeUpdated(uint256 serviceID, uint256 amount);
 
     /*****************************/
     /* STATE VARIABLES           */
@@ -109,6 +64,9 @@ contract TukiFulfillableV1 is Ownable {
     //The Service Identifier to its corresponding Fulfillable product
     uint256 private _serviceIdentifier;
 
+    //The Fee Amount to its corresponding Fulfillable product in wei.
+    uint256 private _feeAmount;
+
     // The amount that is available to be released by the beneficiary.
     uint256 _releaseablePool;
 
@@ -116,12 +74,13 @@ contract TukiFulfillableV1 is Ownable {
     /* FULFILLER LOGIC           */
     /*****************************/
 
-    constructor(address payable beneficiary_, uint256 serviceIdentifier_)
-    {
+    constructor(address payable beneficiary_, uint256 serviceIdentifier_, uint256 feeAmount_) {
         require(address(beneficiary_) != address(0), "Beneficiary is the zero address");
         require(serviceIdentifier_ > 0, "Service ID is required");
+        require(feeAmount_ >= 0, "Fee Amount is required");
         _beneficiary = beneficiary_;
         _serviceIdentifier = serviceIdentifier_;
+        _feeAmount = feeAmount_;
     }
 
     /**
@@ -136,6 +95,14 @@ contract TukiFulfillableV1 is Ownable {
      */
     function serviceID() public view virtual returns (uint256) {
         return _serviceIdentifier;
+    }
+
+
+    /**
+     * @return The fee amount in wei of the escrow.
+     */
+    function feeAmount() public view virtual returns (uint256) {
+        return _feeAmount;
     }
 
     /**
@@ -170,6 +137,15 @@ contract TukiFulfillableV1 is Ownable {
         uint256 refund_amount = _authorized_refunds[refundee];
         _authorized_refunds[refundee] = 0;
         _withdrawRefund(refundee, refund_amount);
+    }
+
+    /**
+     * @dev Set the beneficiary fee.
+     * @param amount The destination address of the funds.
+     */
+    function setFee(uint256 amount) public virtual onlyOwner {
+        _feeAmount = amount;
+        emit FeeUpdated(_serviceIdentifier, amount);
     }
 
     /**
@@ -224,7 +200,7 @@ contract TukiFulfillableV1 is Ownable {
      * @param fulfillment the fulfillment result attached to it.
      */
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual onlyOwner {
-        uint256 total_amount = fulfillment.weiAmount.add(fulfillment.feeAmount);
+        uint256 total_amount = fulfillment.weiAmount.add(_feeAmount);
         require(_deposits[fulfillment.payer] >= total_amount, "There is not enough balance to be released.");
         if(fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(fulfillment.payer, total_amount);
