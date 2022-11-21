@@ -30,7 +30,7 @@ const DUMMY_FULFILLMENTREQUEST = {
 /**
  * this should throw an "insufficient funds" error.
  */
-const DUMMY_NOFUNDS_FULFILLMENTREQUEST = {
+const DUMMY_VALID_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: web3.utils.toWei("101", "ether"),
   fiatAmount: 101,
@@ -215,8 +215,8 @@ contract("TukiRouterV1", function (accounts) {
       try {
         const fee = await v2.feeOf(1);
         const feeAmount = new BN(await fee.toString());
-        const weiAmount = new BN(DUMMY_NOFUNDS_FULFILLMENTREQUEST.weiAmount);
-        await v2.requestService(1, DUMMY_NOFUNDS_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount) });
+        const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+        await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount) });
         throw new Error("This should have thrown lines ago.")
       } catch(err) {
         assert.equal(
@@ -227,7 +227,12 @@ contract("TukiRouterV1", function (accounts) {
     });
 
     it("should send to escrow", async () => {
-        throw new Error("TBD");
+      const fee = await v2.feeOf(1);
+      DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = web3.utils.toWei("1", "ether");
+      const feeAmount = new BN(await fee.toString());
+      const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+      const result = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount) });
+      expect(result).to.be.an('object').that.have.property('receipt');
     });
   });
 });
