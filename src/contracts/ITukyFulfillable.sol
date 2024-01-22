@@ -47,7 +47,7 @@ struct FulFillmentResult {
     FulFillmentResultState status;   
 }
 
-interface ITukiFulfillable {
+interface ITukyFulfillable {
     function deposit(FulFillmentRequest memory request) external payable;
     function feeAmount() external view returns (uint256);
     function setFee(uint256 amount) external;

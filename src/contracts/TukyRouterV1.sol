@@ -8,22 +8,22 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./IIdentifierValidator.sol";
-import "./ITukiFulfillable.sol";
-import "./TukiFulfillableV1.sol";
+import "./ITukyFulfillable.sol";
+import "./TukyFulfillableV1.sol";
 
 
 
 /**
- * ----- TukiRouter -----
+ * ----- TukyRouter -----
  * This Smart Contract is intented to be user-facing.
  * Any valid address can request a fulfillment to a valid fulfillable.
  * -----------------------
  */
-contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
+contract TukyRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using Address for address payable;
     using Math for uint256;
 
-    TukiFulfillableV1 private _escrow;
+    TukyFulfillableV1 private _escrow;
     mapping(uint256 => address) private _services;
     mapping(uint256 => address) private _validators;
 
@@ -82,14 +82,14 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         require(request.fiatAmount > 0, "Fiat amount is invalid");
         require(address(_services[serviceID]) != address(0), "Service ID is not supported");
         require(address(_validators[serviceID]) != address(0), "Validator not found for service ID");
-        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(ITukiFulfillable(_services[serviceID]).feeAmount());
+        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(ITukyFulfillable(_services[serviceID]).feeAmount());
         require(success, "Overflow while adding fee and amount");
         require(msg.value == total_amount, "Transaction total does not match fee + amount.");
         require(
             IIdentifierValidator(_validators[serviceID]).matches(request.serviceRef),
             "The service identifier failed to validate"
         );
-        ITukiFulfillable(_services[serviceID]).deposit{value: msg.value}(request);
+        ITukyFulfillable(_services[serviceID]).deposit{value: msg.value}(request);
         return true;
     }
 
@@ -109,7 +109,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
      */
     function feeOf(uint256 serviceID) public view returns (uint256) {
         require(address(_services[serviceID]) != address(0), "Service ID is not supported.");
-        return ITukiFulfillable(_services[serviceID]).feeAmount();
+        return ITukyFulfillable(_services[serviceID]).feeAmount();
     }
 
     /**
@@ -117,7 +117,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
      * This method must only be called by an owner.
      * It sets up a service escrow address and validator address.
      * 
-     * The escrow is intended to be a valid tuki escrow contract
+     * The escrow is intended to be a valid Tuky escrow contract
      * 
      * The validator address is intended to be a contract that validates the service's
      * identifier. eg. phone number, bill number, etc.
@@ -136,7 +136,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     {
         require(serviceID > 0, "Service ID is invalid");
         require(address(validator) != address(0), "Validator address is required");
-        _escrow = new TukiFulfillableV1(beneficiaryAddress, serviceID, feeAmount, owner());
+        _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, owner());
         _services[serviceID] = address(_escrow);
         _validators[serviceID] = validator;
         emit ServiceAdded(serviceID, _services[serviceID], validator);
@@ -153,7 +153,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     function setFee(uint256 serviceID, uint256 feeAmount) public virtual onlyOwner returns (uint256) {
         require(serviceID > 0, "Service ID is invalid");
         require(feeAmount >= 0, "Fee Amount is invalid");
-        ITukiFulfillable(_services[serviceID]).setFee(feeAmount);
+        ITukyFulfillable(_services[serviceID]).setFee(feeAmount);
         return feeAmount;
     }
     
