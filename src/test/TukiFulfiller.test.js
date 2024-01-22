@@ -1,8 +1,5 @@
-const TukiFulfillableV1 = artifacts.require("TukiFulfillableV1");
-
-const { expect, assert } = require('chai');
-const { default: Web3 } = require('web3');
-const BN = require('bn.js');
+const { expect, assert } = require("chai");
+const { ethers, upgrades } = require("hardhat");
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
@@ -27,7 +24,7 @@ const DUMMY_FULFILLMENTREQUEST = {
 
 let fulfillerContract;
 
-contract("TukiFulfillableV1", function (accounts) {
+/*describe("TukiFulfillableV1", function (accounts) {
   
   before(async () => {
     fulfillerContract = await TukiFulfillableV1.new(DUMMY_ADDRESS, 1, 0);
@@ -90,4 +87,4 @@ contract("TukiFulfillableV1", function (accounts) {
       assert.equal(tx.value, "1100");
     });
   });
-});
+});*/

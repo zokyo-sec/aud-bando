@@ -1,13 +1,15 @@
-const RegexValidator = artifacts.require("TwelveDigitsValidator");
 const { expect, assert } = require('chai');
+const { ethers } = require('hardhat')
 
 
 let regexValidator;
 
-contract("TwelveDigitsValidator", function (accounts) {
+describe("TwelveDigitsValidator", function (accounts) {
 
   before(async () => {
-    regexValidator = await RegexValidator.new();
+    regexValidator = await ethers.deployContract('TwelveDigitsValidator');
+    await regexValidator.waitForDeployment();
+    regexValidator = regexValidator.attach(await regexValidator.getAddress());
   });
 
   describe("Matches", async () => {
