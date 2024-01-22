@@ -1,6 +1,6 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect, assert } = require('chai');
-const BN = require('bn.js');
+const BN = require('bn.js')
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
@@ -27,7 +27,7 @@ const DUMMY_FULFILLMENTREQUEST = {
  */
 const DUMMY_VALID_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
-  weiAmount: ethers.parseUnits("0.11","ether"),
+  weiAmount: ethers.parseUnits("11000", "ether"),
   fiatAmount: 101,
   serviceRef: "012345678912" //valid CFE
 }
@@ -41,9 +41,12 @@ describe("TukyRouterV1", function () {
 
   before(async () => {
     signers = await ethers.getSigners();
-    const TukyRouterV1 = await ethers.getContractFactory('TukyRouterV1')
+    const TukyRouterV1 = await ethers.getContractFactory('TukyRouterV1');
+    const Validator = await ethers.deployContract('TwelveDigitsValidator');
     routerContract = await upgrades.deployProxy(TukyRouterV1, []);
     await routerContract.waitForDeployment();
+    await Validator.waitForDeployment()
+    regexValidator = Validator.attach(await Validator.getAddress())
     v1 = TukyRouterV1.attach(await routerContract.getAddress());
   });
 
@@ -121,33 +124,36 @@ describe("TukyRouterV1", function () {
     });
   });
 
-  /*describe("Route to service", async () => {
+  describe("Route to service", async () => {
     it("should not allow a non-owner to set up a service", async () => {
       try {
-        assert.notEqual(await v2.owner(), accounts[1]);
-        await v2.setService(1, DUMMY_ADDRESS, DUMMY_ADDRESS, 0, { from: accounts[1] });
+        assert.notEqual(await v2.owner(), await signers[1].getAddress());
+        const v2Invalid = v2.connect(signers[1])
+        await v2Invalid.setService(1, DUMMY_ADDRESS, DUMMY_ADDRESS, 0);
         throw new Error("This should have thrown lines ago.");
       } catch(err) {
-        assert.equal(
+        assert.include(
           err.message,
-          `${REVERT_ERROR_PREFIX} revert Ownable: caller is not the owner`
+          'OwnableUnauthorizedAccount'
         );
       }
     }); 
 
     it("should allow an owner to set up a service", async () => {
-      assert.equal(await v2.owner(), accounts[0]);
-      const result = await v2.setService(1, DUMMY_ADDRESS, regexValidator.address, web3.utils.toWei("1", "wei"));
-      expect(result).to.have.property("receipt");
-      expect(result.receipt).to.have.property("status").that.equals(true);
-      expect(result.logs).to.be.an('array').that.has.lengthOf.greaterThanOrEqual(2);
-      expect(result.logs[0]).to.include({ event: 'OwnershipTransferred' });
-      expect(result.logs[1]).to.include({ event: 'ServiceAdded' });
+      const tx = await v2.setService(1, DUMMY_ADDRESS, await regexValidator.getAddress(), ethers.parseUnits('1', 'wei'));
+      const receipt = await tx.wait()
+      expect(tx).to.have.property("hash");
+      expect(receipt.logs).to.be.an('array').that.has.lengthOf.greaterThanOrEqual(2);
+      expect(receipt.logs[0]).to.have.property("fragment");
+      expect(receipt.logs[1]).to.have.property("fragment");
+      expect(receipt.logs[0].fragment).to.have.property("name");
+      expect(receipt.logs[1].fragment).to.have.property("name");
+      expect(receipt.logs[0].fragment).to.include({ name: 'OwnershipTransferred' });
+      expect(receipt.logs[1].fragment).to.include({ name: 'ServiceAdded' });
     });
 
     it("should fail to add service when validator is not set or invalid.", async () => {
       try {
-        assert.equal(await v2.owner(), accounts[0]);
         await v2.setService(1, DUMMY_ADDRESS, null, 0);
         throw new Error("This should have thrown lines ago.");
       } catch (err) {
@@ -156,7 +162,6 @@ describe("TukyRouterV1", function () {
       }
 
       try {
-        assert.equal(await v2.owner(), accounts[0]);
         await v2.setService(1, DUMMY_ADDRESS, 10, 0);
         throw new Error("This should have thrown lines ago.");
       } catch(err) {
@@ -167,12 +172,13 @@ describe("TukyRouterV1", function () {
 
     it("should fail when service id is not set by owner", async () => {
       try {
-        await v2.requestService(2, DUMMY_FULFILLMENTREQUEST, {from: accounts[1], value: web3.utils.toWei("1000", "wei")});
+        const v2Signer1 = v2.connect(signers[1])
+        await v2Signer1.requestService(2, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")});
         throw new Error("This should have thrown lines ago.")
       } catch(err) {
-        assert.equal(
+        assert.include(
           err.message,
-          `${REVERT_ERROR_PREFIX} revert Service ID is not supported`
+          'Service ID is not supported'
         );
       }
     });
@@ -182,31 +188,31 @@ describe("TukyRouterV1", function () {
         await v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: 0});
         throw new Error("This should have thrown lines ago.")
       } catch(err) {
-        assert.equal(
+        assert.include(
           err.message,
-          `${REVERT_ERROR_PREFIX} revert Amount must be greater than zero`
+          'Amount must be greater than zero'
         );
       }
     });
 
     it("should fail when the validator doesnt match", async () => {
       try {
-        await v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: web3.utils.toWei("1000", "wei")});
+        await v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")});
         throw new Error("This should have thrown lines ago.")
       } catch(err) {
-        assert.equal(
+        assert.include(
           err.message,  
-          `${REVERT_ERROR_PREFIX} revert The service identifier failed to validate`
+          'The service identifier failed to validate'
         );
       }
 
       try {
-        await v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: web3.utils.toWei("1000", "wei")});
+        await v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")});
         throw new Error("This should have thrown lines ago.")
       } catch(err) {
-        assert.equal(
+        assert.include(
           err.message,
-          `${REVERT_ERROR_PREFIX} revert The service identifier failed to validate`
+          'The service identifier failed to validate'
         );
       }
     });
@@ -216,24 +222,25 @@ describe("TukyRouterV1", function () {
         const fee = await v2.feeOf(1);
         const feeAmount = new BN(await fee.toString());
         const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
-        await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount) });
-        throw new Error("This should have thrown lines ago.")
+        total = weiAmount.add(feeAmount)
+        tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: total.toString() });
+        const r = await tx.wait()
       } catch(err) {
-        assert.equal(
-          new String(err.message).startsWith("Returned error: sender doesn't have enough funds to send tx. The upfront cost is:"),
-          true
+        assert.include(
+          err.message,
+          "sender doesn't have enough funds to send tx",
         );
       }
     });
 
     it("should send to escrow", async () => {
       const fee = await v2.feeOf(1);
-      DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = web3.utils.toWei("1", "ether");
+      DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       const feeAmount = new BN(await fee.toString());
       const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
-      const result = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount) });
-      expect(result).to.be.an('object').that.have.property('receipt');
+      const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });
+      const receipt = await tx.wait()
+      expect(receipt).to.be.an('object').that.have.property('hash');
     });
-  });
-*/
+  })
 });

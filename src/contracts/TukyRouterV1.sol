@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./IIdentifierValidator.sol";
 import "./ITukyFulfillable.sol";
 import "./TukyFulfillableV1.sol";
-
+import "hardhat/console.sol";
 
 
 /**
@@ -136,7 +136,7 @@ contract TukyRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     {
         require(serviceID > 0, "Service ID is invalid");
         require(address(validator) != address(0), "Validator address is required");
-        _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, owner());
+        _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount);
         _services[serviceID] = address(_escrow);
         _validators[serviceID] = validator;
         emit ServiceAdded(serviceID, _services[serviceID], validator);

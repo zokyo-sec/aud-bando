@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ITukyFulfillable.sol";
+import "hardhat/console.sol";
 
 
 /**
@@ -75,9 +76,8 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
     constructor(
         address payable beneficiary_,
         uint256 serviceIdentifier_,
-        uint256 feeAmount_, 
-        address initialOwner
-    ) Ownable(initialOwner) {
+        uint256 feeAmount_
+    ) Ownable(msg.sender) {
         require(address(beneficiary_) != address(0), "Beneficiary is the zero address");
         require(serviceIdentifier_ > 0, "Service ID is required");
         require(feeAmount_ >= 0, "Fee Amount is required");
