@@ -2,7 +2,7 @@
 // Inspired in:
 // OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 
-pragma solidity 0.8.17;
+pragma solidity >=0.8.20 <0.9.0;
     
 /**
 * enum with states for fulfillment results.

@@ -2,12 +2,11 @@
 // Inspired in:
 // OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 
-pragma solidity 0.8.17;
+pragma solidity >=0.8.20 <0.9.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "./ITukiFulfillable.sol";
 
 
@@ -26,8 +25,7 @@ import "./ITukiFulfillable.sol";
  */
 contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
     using Address for address payable;
-    using SafeMath for uint256;
-    using Counters for Counters.Counter;
+    using Math for uint256;
 
     /**********************/
     /* EVENT DECLARATIONS */
@@ -44,7 +42,7 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
     /*****************************/
 
     //Auto-incrementable id storage
-    Counters.Counter private _fulfillmentIds;
+    uint256 private _fulfillmentIdCount;
 
     // All fulfillment records keyed by their ids
     mapping(uint256 => FulFillmentRecord) private _fulfillmentRecords;
@@ -74,7 +72,12 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
     /* FULFILLER LOGIC           */
     /*****************************/
 
-    constructor(address payable beneficiary_, uint256 serviceIdentifier_, uint256 feeAmount_) {
+    constructor(
+        address payable beneficiary_,
+        uint256 serviceIdentifier_,
+        uint256 feeAmount_, 
+        address initialOwner
+    ) Ownable(initialOwner) {
         require(address(beneficiary_) != address(0), "Beneficiary is the zero address");
         require(serviceIdentifier_ > 0, "Service ID is required");
         require(feeAmount_ >= 0, "Fee Amount is required");
@@ -118,7 +121,9 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
      */
     function deposit(FulFillmentRequest memory fulfillmentRequest) public payable virtual onlyOwner {
         uint256 amount = msg.value;
-        _deposits[fulfillmentRequest.payer] = amount.add(_deposits[fulfillmentRequest.payer]);
+        (bool success, uint256 result) = amount.tryAdd(_deposits[fulfillmentRequest.payer]);
+        require(success, "Overflow while adding deposits");
+        _deposits[fulfillmentRequest.payer] = result;
         emit DepositReceived(fulfillmentRequest);
     }
 
@@ -168,7 +173,9 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
      * @param weiAmount the amount to be authorized.
      */
     function _authorizeRefund(address refundee, uint256 weiAmount) internal onlyOwner {
-        uint256 total_refunds = _authorized_refunds[refundee].add(weiAmount);
+        (bool asuccess, uint256 addResult) = _authorized_refunds[refundee].tryAdd(weiAmount);
+        require(asuccess, "Overflow while adding authorized refunds");
+        uint256 total_refunds = addResult;
         require(
             _deposits[refundee] >= weiAmount,
             "Amount is bigger than the total in escrow"
@@ -177,7 +184,9 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
             _deposits[refundee] >= total_refunds,
             "Total refunds would be bigger than the total in escrow"
         );
-        _deposits[refundee] = _deposits[refundee].sub(weiAmount);
+        (bool ssuccess, uint256 subResult) = _deposits[refundee].trySub(weiAmount);
+        require(ssuccess, "Overflow while substracting deposits");
+        _deposits[refundee] = subResult;
         _authorized_refunds[refundee] = total_refunds;
         emit RefundAuthorized(refundee, weiAmount);
     }
@@ -200,17 +209,22 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
      * @param fulfillment the fulfillment result attached to it.
      */
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual onlyOwner {
-        uint256 total_amount = fulfillment.weiAmount.add(_feeAmount);
+        (bool ffsuccess, uint256 total_amount) = fulfillment.weiAmount.tryAdd(_feeAmount);
+        require(ffsuccess, "Overflow while adding fulfillment amount and fee");
         require(_deposits[fulfillment.payer] >= total_amount, "There is not enough balance to be released.");
         if(fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(fulfillment.payer, total_amount);
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
-            // something weird happened. must better log this.
-            emit LogFailure("Fulfillment result was submitted with weird status");
+            // unexpected happened. must better log this.
+            emit LogFailure("Fulfillment result was submitted with unexpected status");
             revert();
         } else {
-            _releaseablePool = _releaseablePool.add(total_amount);
-            _deposits[fulfillment.payer] = _deposits[fulfillment.payer].sub(total_amount);
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePool.tryAdd(total_amount);
+            require(rlsuccess, "Overflow while adding to releaseable pool");
+            (bool dsuccess, uint256 subResult) = _deposits[fulfillment.payer].trySub(total_amount);
+            require(dsuccess, "Overflow while substracting from deposits");
+            _releaseablePool = releaseResult;
+            _deposits[fulfillment.payer] = subResult;
             // create a FulfillmentRecord
             FulFillmentRecord memory fulfillmentRecord = FulFillmentRecord({
                 id: 0,
@@ -222,9 +236,9 @@ contract TukiFulfillableV1 is Ownable, ITukiFulfillable {
                 feeAmount: fulfillment.feeAmount, 
                 receiptURI: fulfillment.receiptURI
             });
-            _fulfillmentIds.increment();
-            fulfillmentRecord.id = _fulfillmentIds.current();
-            _fulfillmentRecordCount++;
+            fulfillmentRecord.id = _fulfillmentIdCount;
+            _fulfillmentIdCount += 1;
+            _fulfillmentRecordCount += 1;
             _fulfillmentRecords[fulfillmentRecord.id] = fulfillmentRecord;
             _fulfillmentRecordsForSubject[fulfillmentRecord.payer].push(fulfillmentRecord.id);
         }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./IIdentifierValidator.sol";
@@ -20,8 +20,8 @@ import "./TukiFulfillableV1.sol";
  * -----------------------
  */
 contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
-    using AddressUpgradeable for address payable;
-    using SafeMathUpgradeable for uint256;
+    using Address for address payable;
+    using Math for uint256;
 
     TukiFulfillableV1 private _escrow;
     mapping(uint256 => address) private _services;
@@ -35,7 +35,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
      * @dev Constructor.
      */
     function initialize() public virtual initializer {
-        __Ownable_init();
+        __Ownable_init(msg.sender);
         __Pausable_init();
         __UUPSUpgradeable_init();
     }
@@ -82,7 +82,8 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         require(request.fiatAmount > 0, "Fiat amount is invalid");
         require(address(_services[serviceID]) != address(0), "Service ID is not supported");
         require(address(_validators[serviceID]) != address(0), "Validator not found for service ID");
-        uint256 total_amount = request.weiAmount.add(ITukiFulfillable(_services[serviceID]).feeAmount());
+        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(ITukiFulfillable(_services[serviceID]).feeAmount());
+        require(success, "Overflow while adding fee and amount");
         require(msg.value == total_amount, "Transaction total does not match fee + amount.");
         require(
             IIdentifierValidator(_validators[serviceID]).matches(request.serviceRef),
@@ -135,7 +136,7 @@ contract TukiRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     {
         require(serviceID > 0, "Service ID is invalid");
         require(address(validator) != address(0), "Validator address is required");
-        _escrow = new TukiFulfillableV1(beneficiaryAddress, serviceID, feeAmount);
+        _escrow = new TukiFulfillableV1(beneficiaryAddress, serviceID, feeAmount, owner());
         _services[serviceID] = address(_escrow);
         _validators[serviceID] = validator;
         emit ServiceAdded(serviceID, _services[serviceID], validator);
