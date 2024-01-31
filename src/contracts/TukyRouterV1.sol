@@ -86,7 +86,7 @@ contract TukyRouterV1 is
             IIdentifierValidator(service.validator).matches(request.serviceRef),
             "The service identifier failed to validate"
         );
-        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(ITukyFulfillable(service.contractAddress).feeAmount());
+        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(service.feeAmount);
         require(success, "Overflow while adding fee and amount");
         require(msg.value == total_amount, "Transaction total does not match fee + amount.");
         ITukyFulfillable(service.contractAddress).deposit{value: msg.value}(request);
