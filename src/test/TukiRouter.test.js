@@ -125,11 +125,12 @@ describe("TukyRouterV1", function () {
   });
 
   describe("Route to service", async () => {
+
     it("should not allow a non-owner to set up a service", async () => {
       try {
         assert.notEqual(await v2.owner(), await signers[1].getAddress());
         const v2Invalid = v2.connect(signers[1])
-        await v2Invalid.setService(1, DUMMY_ADDRESS, DUMMY_ADDRESS, 0);
+        await v2Invalid.setService(1, DUMMY_ADDRESS, DUMMY_ADDRESS, 0, );
         throw new Error("This should have thrown lines ago.");
       } catch(err) {
         assert.include(
@@ -242,5 +243,12 @@ describe("TukyRouterV1", function () {
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
     });
-  })
+  });
+
+  describe('Access Control', async () => {
+    it("set an address as fulfiller", async () => {
+      const fulfiller = await v2.setFulfiller(signers[1].getAddress());
+      console.log(fulfiller);
+    })
+  });
 });

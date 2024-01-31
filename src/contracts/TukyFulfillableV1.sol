@@ -4,6 +4,7 @@
 
 pragma solidity >=0.8.20 <0.9.0;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -24,9 +25,10 @@ import "hardhat/console.sol";
  * payment method should be its owner, and provide public methods redirecting
  * to the escrow's deposit and withdraw.
  */
-contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
+contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
     using Address for address payable;
     using Math for uint256;
+    bytes32 public constant FULFILLER_ROLE = keccak256("FULFILLER_ROLE");
 
     /**********************/
     /* EVENT DECLARATIONS */
@@ -89,19 +91,20 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
         _serviceIdentifier = serviceIdentifier_;
         _feeAmount = feeAmount_;
         _fulfiller = fulfiller_;
+        _grantRole(FULFILLER_ROLE, fulfiller_);
     }
 
     /**
      * @return The beneficiary of the escrow.
      */
-    function beneficiary() public view virtual onlyOwner returns (address payable) {
+    function beneficiary() public view virtual returns (address payable) {
         return _beneficiary;
     }
 
     /**
      * @return The service ID of the escrow.
      */
-    function serviceID() public view virtual onlyOwner returns (uint256) {
+    function serviceID() public view virtual returns (uint256) {
         return _serviceIdentifier;
     }
 
@@ -116,8 +119,16 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
     /**
      * @return Total deposits from a payer
      */
-    function depositsOf(address payer) public view onlyOwner returns (uint256) {
+    function depositsOf(address payer) public view returns (uint256) {
         return _deposits[payer];
+    }
+
+    /**
+     * @dev fulfiller of the escrow.
+     * @return the fulfiller address
+     */
+    function fulfiller() public view virtual returns (address) {
+        return _fulfiller;
     }
 
     /**
@@ -153,7 +164,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
      * @dev Set the beneficiary fee.
      * @param amount The destination address of the funds.
      */
-    function setFee(uint256 amount) public virtual onlyOwner {
+    function setFee(uint256 amount) public virtual {
         _feeAmount = amount;
         emit FeeUpdated(_serviceIdentifier, amount);
     }
@@ -213,7 +224,8 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
      *
      * @param fulfillment the fulfillment result attached to it.
      */
-    function registerFulfillment(FulFillmentResult memory fulfillment) public virtual onlyOwner {
+    function registerFulfillment(FulFillmentResult memory fulfillment) public virtual {
+        require (hasRole(FULFILLER_ROLE, msg.sender), "Caller is not a fulfiller");
         (bool ffsuccess, uint256 total_amount) = fulfillment.weiAmount.tryAdd(_feeAmount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");
         require(_deposits[fulfillment.payer] >= total_amount, "There is not enough balance to be released.");

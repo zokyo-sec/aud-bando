@@ -47,9 +47,22 @@ struct FulFillmentResult {
     FulFillmentResultState status;   
 }
 
+/**
+* @dev Interface for tuky fulfillment protocol.
+* This interface is intented to be implemented by any contract that wants to be a fulfillable.
+* A fulfillable is a contract that can accept fulfillments from a router.
+* The router will route fulfillments to the fulfillable based on the serviceID.
+*/
 interface ITukyFulfillable {
     function deposit(FulFillmentRequest memory request) external payable;
+
     function feeAmount() external view returns (uint256);
+
     function setFee(uint256 amount) external;
+
     function registerFulfillment(FulFillmentResult memory fulfillment) external;
+
+    function serviceID() external view returns (uint256);
+
+    function fulfiller() external view returns (address);
 }
