@@ -9,8 +9,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ITukyFulfillable.sol";
-import "hardhat/console.sol";
-
 
 /**
  * @title TukyFulfillableV1
