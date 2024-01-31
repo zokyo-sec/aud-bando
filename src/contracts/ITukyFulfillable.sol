@@ -65,4 +65,6 @@ interface ITukyFulfillable {
     function serviceID() external view returns (uint256);
 
     function fulfiller() external view returns (address);
+
+    function withdrawRefund(address payable refundee) external returns (bool);
 }

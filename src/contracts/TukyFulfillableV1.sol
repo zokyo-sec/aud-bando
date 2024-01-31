@@ -23,10 +23,9 @@ import "./ITukyFulfillable.sol";
  * payment method should be its owner, and provide public methods redirecting
  * to the escrow's deposit and withdraw.
  */
-contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
+contract TukyFulfillableV1 is ITukyFulfillable {
     using Address for address payable;
     using Math for uint256;
-    bytes32 public constant FULFILLER_ROLE = keccak256("FULFILLER_ROLE");
 
     /**********************/
     /* EVENT DECLARATIONS */
@@ -60,6 +59,12 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
     // The fulfiller address
     address private _fulfiller;
 
+    // The protocol manager address
+    address private _manager;
+
+    // The protocol router address
+    address private _router;
+
     mapping(address => uint256) private _deposits;
     mapping(address => uint256) private _authorized_refunds;
 
@@ -80,8 +85,10 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
         address payable beneficiary_,
         uint256 serviceIdentifier_,
         uint256 feeAmount_,
+        address manager_,
+        address router_,
         address fulfiller_
-    ) Ownable(msg.sender) {
+    ) {
         require(address(beneficiary_) != address(0), "Beneficiary is the zero address");
         require(serviceIdentifier_ > 0, "Service ID is required");
         require(feeAmount_ >= 0, "Fee Amount is required");
@@ -89,7 +96,8 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
         _serviceIdentifier = serviceIdentifier_;
         _feeAmount = feeAmount_;
         _fulfiller = fulfiller_;
-        _grantRole(FULFILLER_ROLE, fulfiller_);
+        _manager = manager_;
+        _router = router_;
     }
 
     /**
@@ -133,7 +141,8 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
      * @dev Stores the sent amount as credit to be claimed.
      * @param fulfillmentRequest The destination address of the funds.
      */
-    function deposit(FulFillmentRequest memory fulfillmentRequest) public payable virtual onlyOwner {
+    function deposit(FulFillmentRequest memory fulfillmentRequest) public payable virtual {
+        require(_router == msg.sender, "Caller is not the router");
         uint256 amount = msg.value;
         (bool success, uint256 result) = amount.tryAdd(_deposits[fulfillmentRequest.payer]);
         require(success, "Overflow while adding deposits");
@@ -151,11 +160,13 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
      *
      * @param refundee The address whose funds will be withdrawn and transferred to.
      */
-    function withdrawRefund(address payable refundee) public virtual onlyOwner {
+    function withdrawRefund(address payable refundee) public virtual returns (bool) {
+        require(_manager == msg.sender, "Caller is not the fulfiller");
         require(_authorized_refunds[refundee] > 0, "Address is not allowed any refunds");
         uint256 refund_amount = _authorized_refunds[refundee];
         _authorized_refunds[refundee] = 0;
         _withdrawRefund(refundee, refund_amount);
+        return true;
     }
 
     /**
@@ -163,6 +174,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
      * @param amount The destination address of the funds.
      */
     function setFee(uint256 amount) public virtual {
+        require(_manager == msg.sender, "Caller is not the manager");
         _feeAmount = amount;
         emit FeeUpdated(_serviceIdentifier, amount);
     }
@@ -175,7 +187,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
     * 
     * @param refundee The address to send the value to.
     */
-    function _withdrawRefund(address payable refundee, uint256 amount) internal onlyOwner {
+    function _withdrawRefund(address payable refundee, uint256 amount) internal {
         refundee.sendValue(amount); 
         emit RefundWithdrawn(refundee, amount);
     }
@@ -186,7 +198,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
      * @param refundee the record to be
      * @param weiAmount the amount to be authorized.
      */
-    function _authorizeRefund(address refundee, uint256 weiAmount) internal onlyOwner {
+    function _authorizeRefund(address refundee, uint256 weiAmount) internal {
         (bool asuccess, uint256 addResult) = _authorized_refunds[refundee].tryAdd(weiAmount);
         require(asuccess, "Overflow while adding authorized refunds");
         uint256 total_refunds = addResult;
@@ -223,7 +235,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
      * @param fulfillment the fulfillment result attached to it.
      */
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual {
-        require (hasRole(FULFILLER_ROLE, msg.sender), "Caller is not a fulfiller");
+        require(_manager == msg.sender, "Caller is not the manager");
         (bool ffsuccess, uint256 total_amount) = fulfillment.weiAmount.tryAdd(_feeAmount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");
         require(_deposits[fulfillment.payer] >= total_amount, "There is not enough balance to be released.");
@@ -261,8 +273,10 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable, AccessControl {
 
     /**
      * @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
+     * Only the fulfiller of the service can withdraw the releaseable pool.
      */
-    function beneficiaryWithdraw() public virtual onlyOwner {
+    function beneficiaryWithdraw() public virtual {
+        require(_manager == msg.sender, "Caller is not the manager");
         require(_releaseablePool > 0, "There is no balance to release.");
         _releaseablePool = 0;
         beneficiary().sendValue(_releaseablePool);
