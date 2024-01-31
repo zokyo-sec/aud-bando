@@ -2,6 +2,7 @@
 pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -19,17 +20,25 @@ import "hardhat/console.sol";
  * Any valid address can request a fulfillment to a valid fulfillable.
  * -----------------------
  */
-contract TukyRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable {
+contract TukyRouterV1 is 
+    Initializable,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    UUPSUpgradeable,
+    AccessControlUpgradeable {
     using Address for address payable;
     using Math for uint256;
+
+    bytes32 public constant FULFILLER_ROLE = keccak256("FULFILLER_ROLE");
 
     TukyFulfillableV1 private _escrow;
     mapping(uint256 => address) private _services;
     mapping(uint256 => address) private _validators;
+    mapping(uint256 => address) private _fulfillers;
 
     event ServiceRequested(uint256 serviceID, FulFillmentRequest request);
     event RefValidationFailed(uint256 serviceID, string serviceRef);
-    event ServiceAdded(uint256 serviceID, address escrow, address validator);
+    event ServiceAdded(uint256 serviceID, address escrow, address validator, address fulfiller);
   
     /**
      * @dev Constructor.
@@ -38,6 +47,7 @@ contract TukyRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         __Ownable_init(msg.sender);
         __Pausable_init();
         __UUPSUpgradeable_init();
+        __AccessControl_init();
     }
 
     function pause() public onlyOwner {
@@ -104,6 +114,27 @@ contract TukyRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
     }
 
     /**
+     * @dev registerFulfillment
+     * This method must only be called by a fulfiller.
+     * It registers a fulfillment record for a particular service.
+     * 
+     */
+    function registerFulfillment(uint256 serviceID, FulFillmentResult memory record) public whenNotPaused returns (bool) {
+        require(hasRole(FULFILLER_ROLE, msg.sender), "Caller is not a fulfiller");
+        require(address(_services[serviceID]) != address(0), "Service ID is not supported.");
+        require(
+            ITukyFulfillable(_services[serviceID]).serviceID() == serviceID,
+            "Service ID does not match the escrow contract"
+        );
+        require(
+            ITukyFulfillable(_services[serviceID]).fulfiller() == msg.sender,
+            "Fulfiller does not match the escrow contract"
+        );
+        ITukyFulfillable(_services[serviceID]).registerFulfillment(record);
+        return true;
+    }
+
+    /**
      * @return the fee amount for the service ID of a particular service.
      *
      */
@@ -127,20 +158,33 @@ contract TukyRouterV1 is Initializable, OwnableUpgradeable, PausableUpgradeable,
         uint256 serviceID,
         address payable beneficiaryAddress,
         address validator,
-        uint256 feeAmount
+        uint256 feeAmount,
+        address fulfiller
     ) 
         public 
-        virtual 
+        virtual
         onlyOwner 
         returns (address[2] memory) 
     {
         require(serviceID > 0, "Service ID is invalid");
         require(address(validator) != address(0), "Validator address is required");
-        _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount);
+        _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, fulfiller);
         _services[serviceID] = address(_escrow);
         _validators[serviceID] = validator;
-        emit ServiceAdded(serviceID, _services[serviceID], validator);
+        _fulfillers[serviceID] = fulfiller;
+        emit ServiceAdded(serviceID, _services[serviceID], validator, fulfiller);
         return [_services[serviceID], _validators[serviceID]];
+    }
+
+    /**
+     * @dev setFulfiller
+     * This method must only be called by an owner.
+     * It sets up a fulfiller address and assigns the FULFILLER_ROLE.
+     * 
+     */
+    function setFulfiller(address fulfiller) public virtual onlyOwner {
+        require(fulfiller != address(0), "Fulfiller address is required");
+        _grantRole(FULFILLER_ROLE, fulfiller);
     }
 
     /**

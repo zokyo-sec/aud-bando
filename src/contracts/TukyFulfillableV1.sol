@@ -57,6 +57,9 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
     // The beneficiary address of the contract which will receive released funds.
     address payable private _beneficiary;
 
+    // The fulfiller address
+    address private _fulfiller;
+
     mapping(address => uint256) private _deposits;
     mapping(address => uint256) private _authorized_refunds;
 
@@ -70,13 +73,14 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
     uint256 _releaseablePool;
 
     /*****************************/
-    /* FULFILLER LOGIC           */
+    /* FULFILLABLE ESCROW LOGIC  */
     /*****************************/
 
     constructor(
         address payable beneficiary_,
         uint256 serviceIdentifier_,
-        uint256 feeAmount_
+        uint256 feeAmount_,
+        address fulfiller_
     ) Ownable(msg.sender) {
         require(address(beneficiary_) != address(0), "Beneficiary is the zero address");
         require(serviceIdentifier_ > 0, "Service ID is required");
@@ -84,19 +88,20 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
         _beneficiary = beneficiary_;
         _serviceIdentifier = serviceIdentifier_;
         _feeAmount = feeAmount_;
+        _fulfiller = fulfiller_;
     }
 
     /**
      * @return The beneficiary of the escrow.
      */
-    function beneficiary() public view virtual returns (address payable) {
+    function beneficiary() public view virtual onlyOwner returns (address payable) {
         return _beneficiary;
     }
 
     /**
      * @return The service ID of the escrow.
      */
-    function serviceID() public view virtual returns (uint256) {
+    function serviceID() public view virtual onlyOwner returns (uint256) {
         return _serviceIdentifier;
     }
 
@@ -111,7 +116,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
     /**
      * @return Total deposits from a payer
      */
-    function depositsOf(address payer) public view returns (uint256) {
+    function depositsOf(address payer) public view onlyOwner returns (uint256) {
         return _deposits[payer];
     }
 
@@ -247,7 +252,7 @@ contract TukyFulfillableV1 is Ownable, ITukyFulfillable {
     /**
      * @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
      */
-    function beneficiaryWithdraw() public virtual {
+    function beneficiaryWithdraw() public virtual onlyOwner {
         require(_releaseablePool > 0, "There is no balance to release.");
         _releaseablePool = 0;
         beneficiary().sendValue(_releaseablePool);
