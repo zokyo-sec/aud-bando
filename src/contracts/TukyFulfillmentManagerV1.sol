@@ -20,20 +20,17 @@ import './TukyFulfillableV1.sol';
  * losing its state, allowing for seamless upgrades of the 
  * contract's implementation logic.
  * 
- * The contract has a private variable _serviceRegistry of type address. 
- * This variable stores the address of the service registry.
+ * The purpose pf this contract is to interact with the FulfillableRegistry
+ * and the TukyFulfillable contracts to perform the following actions:
  * 
- * The initialize function is used to initialize the contract's 
- * state variables. It sets the _serviceRegistry variable to its value.
+ * - Set up a service escrow address and validator address.
+ * - Register a fulfillment result for a service.
+ * - Withdraw a refund from a service.
+ * - Withdraw funds for a beneficiary in a releasable pool.
  * 
- * The _authorizeUpgrade function is used to authorize upgrades 
- * to the contract's implementation. In this case, the function 
- * is empty, meaning that only the contract owner can authorize upgrades.
- * 
- * The setService function sets up a service by providing various 
- * parameters such as serviceID, beneficiaryAddress, validator, 
- * feeAmount, fulfiller, and router. This function is intended 
- * to be called only by the contract owner.
+ * The owner of the contract is the operator of the fulfillment protocol.
+ * But the fulfillers are the only ones that can register a fulfillment result 
+ * and withdraw a refund.
  * 
  */
 contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
@@ -48,6 +45,7 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         _serviceRegistry = serviceRegistry;
     }
 
+    // UUPS upgrade authorization
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
 
@@ -101,5 +99,21 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
             "Only the fulfiller can withdraw the refund"
         );
         require(ITukyFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
+    }
+
+    /**
+     * @dev registerFulfillment
+     * This method must only be called by the service fulfiller.
+     * It registers a fulfillment result for a service.
+     * @param serviceID 
+     * @param fulfillment 
+     */
+    function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
+        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        require(
+            service.fulfiller == msg.sender, 
+            "Only the fulfiller can register a fulfillment"
+        );
+        ITukyFulfillable(service.contractAddress).registerFulfillment(fulfillment);
     }
 }
