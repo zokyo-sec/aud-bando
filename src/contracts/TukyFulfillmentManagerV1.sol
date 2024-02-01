@@ -91,6 +91,8 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /**
      * @dev withdrawRefund
      * This method must only be called by the service fulfiller
+     * @param serviceID uint256 service identifier
+     * @param refundee address payable address of the refund recipient
      */
     function withdrawRefund(uint256 serviceID, address payable refundee) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
@@ -105,8 +107,8 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      * @dev registerFulfillment
      * This method must only be called by the service fulfiller.
      * It registers a fulfillment result for a service.
-     * @param serviceID 
-     * @param fulfillment 
+     * @param serviceID uint256 service identifier
+     * @param fulfillment the fullfilment result
      */
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
