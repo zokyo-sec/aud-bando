@@ -44,7 +44,13 @@ contract FulfillableRegistry is UUPSUpgradeable, OwnableUpgradeable {
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function addService(uint256 serviceId, Service memory service) external onlyOwner returns (bool) {
+    /**
+     * addService
+     * This method must only be called by the owner.
+     * @param serviceId the service identifier
+     * @param service the service info object
+     */
+    function addService(uint256 serviceId, Service memory service) external returns (bool) {
         require(
             _serviceRegistry[serviceId].contractAddress == address(0), 
             'FulfillableRegistry: Service already exists'

@@ -90,32 +90,30 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     /**
      * @dev withdrawRefund
-     * This method must only be called by the service fulfiller
+     * This method must only be called by the service fulfiller or the owner.
      * @param serviceID uint256 service identifier
      * @param refundee address payable address of the refund recipient
      */
     function withdrawRefund(uint256 serviceID, address payable refundee) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        require(
-            service.fulfiller == msg.sender, 
-            "Only the fulfiller can withdraw the refund"
-        );
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
+        }
         require(ITukyFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
     }
 
     /**
      * @dev registerFulfillment
-     * This method must only be called by the service fulfiller.
-     * It registers a fulfillment result for a service.
+     * This method must only be called by the service fulfiller or the owner
+     * It registers a fulfillment result for a service calling the escrow contract.
      * @param serviceID uint256 service identifier
      * @param fulfillment the fullfilment result
      */
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        require(
-            service.fulfiller == msg.sender, 
-            "Only the fulfiller can register a fulfillment"
-        );
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
+        }
         ITukyFulfillable(service.contractAddress).registerFulfillment(fulfillment);
     }
 }
