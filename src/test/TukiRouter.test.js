@@ -5,16 +5,7 @@ const BN = require('bn.js')
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
 
-/**
-* @dev Anybody can submit a fulfillment request through a router.
-* struct FulFillmentRequest {
-*  address payer; // address of payer
-* uint256 weiAmount; // address of the subject, the recipient of a successful verification
-*  uint256 fiatAmount; // fiat amount to be charged for the fufillable
-*  uint256 feeAmount; // fee amount in wei
-*  string serviceRef; // identifier required to route the payment to the user's destination
-*}
-**/
+
 const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: 999,
@@ -36,14 +27,20 @@ let routerContract;
 let regexValidator;
 let v2;
 let signers;
+let registry;
 
 describe("TukyRouterV1", function () {
 
   before(async () => {
     signers = await ethers.getSigners();
+    const ServiceRegistry = await ethers.getContractFactory('FulfillableRegistry');
+    const serviceRegistry = await upgrades.deployProxy(ServiceRegistry, []);
+    await serviceRegistry.waitForDeployment();
+    const registryAddress = await serviceRegistry.getAddress();
+    registry = await ServiceRegistry.attach(registryAddress);
     const TukyRouterV1 = await ethers.getContractFactory('TukyRouterV1');
     const Validator = await ethers.deployContract('TwelveDigitsValidator');
-    routerContract = await upgrades.deployProxy(TukyRouterV1, []);
+    routerContract = await upgrades.deployProxy(TukyRouterV1, [registryAddress]);
     await routerContract.waitForDeployment();
     await Validator.waitForDeployment()
     regexValidator = Validator.attach(await Validator.getAddress())
