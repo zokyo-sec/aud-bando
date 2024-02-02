@@ -29,7 +29,7 @@ contract TukyFulfillableV1 is ITukyFulfillable {
     /* EVENT DECLARATIONS */
     /**********************/
 
-    event DepositReceived(FulFillmentRequest request);
+    event DepositReceived(FulFillmentRecord record);
     event RefundWithdrawn(address indexed payee, uint256 weiAmount);
     event RefundAuthorized(address indexed payee, uint256 weiAmount);
     event LogFailure(string message);
@@ -95,6 +95,7 @@ contract TukyFulfillableV1 is ITukyFulfillable {
         _fulfiller = fulfiller_;
         _manager = msg.sender;
         _router = router_;
+        _fulfillmentIdCount = 1;
     }
 
     /**
@@ -128,7 +129,8 @@ contract TukyFulfillableV1 is ITukyFulfillable {
 
     /**
      * @dev Stores the sent amount as credit to be claimed.
-     * @param fulfillmentRequest The destination address of the funds.
+     * @param fulfillmentRequest The fulfillment record to be stored.
+     * 
      */
     function deposit(FulFillmentRequest memory fulfillmentRequest) public payable virtual {
         require(_router == msg.sender, "Caller is not the router");
@@ -136,7 +138,25 @@ contract TukyFulfillableV1 is ITukyFulfillable {
         (bool success, uint256 result) = amount.tryAdd(_deposits[fulfillmentRequest.payer]);
         require(success, "Overflow while adding deposits");
         _deposits[fulfillmentRequest.payer] = result;
-        emit DepositReceived(fulfillmentRequest);
+        // create a FulfillmentRecord
+        FulFillmentRecord memory fulfillmentRecord = FulFillmentRecord({
+            id: _fulfillmentIdCount,
+            serviceRef: fulfillmentRequest.serviceRef,
+            externalID: "",
+            fulfiller: _fulfiller,
+            entryTime: block.timestamp,
+            payer: fulfillmentRequest.payer,
+            weiAmount: fulfillmentRequest.weiAmount,
+            feeAmount: _feeAmount,
+            fiatAmount: fulfillmentRequest.fiatAmount,
+            receiptURI: "",
+            status: FulFillmentResultState.PENDING
+        });
+        _fulfillmentIdCount += 1;
+        _fulfillmentRecordCount += 1;
+        _fulfillmentRecords[fulfillmentRecord.id] = fulfillmentRecord;
+        _fulfillmentRecordsForSubject[fulfillmentRecord.payer].push(fulfillmentRecord.id);
+        emit DepositReceived(fulfillmentRecord);
     }
 
     /**
@@ -219,17 +239,20 @@ contract TukyFulfillableV1 is ITukyFulfillable {
      * If these verifications pass:
      * - add the amount fulfilled to the release pool.
      * - substract the amount from the payer's deposits.
-     * - persist this as a FulFillmentRecord to the blockchain.
+     * - update the FulFillmentRecord to the blockchain.
      *
      * @param fulfillment the fulfillment result attached to it.
      */
-    function registerFulfillment(FulFillmentResult memory fulfillment) public virtual {
+    function registerFulfillment(FulFillmentResult memory fulfillment) public virtual returns (bool) {
+        // check that fulfillment record is present
         require(_manager == msg.sender, "Caller is not the manager");
+        require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
         (bool ffsuccess, uint256 total_amount) = fulfillment.weiAmount.tryAdd(_feeAmount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");
-        require(_deposits[fulfillment.payer] >= total_amount, "There is not enough balance to be released.");
+        require(_deposits[_fulfillmentRecords[fulfillment.id].payer] >= total_amount, "There is not enough balance to be released.");
         if(fulfillment.status == FulFillmentResultState.FAILED) {
-            _authorizeRefund(fulfillment.payer, total_amount);
+            _authorizeRefund(_fulfillmentRecords[fulfillment.id].payer, total_amount);
+            _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
             // unexpected happened. must better log this.
             emit LogFailure("Fulfillment result was submitted with unexpected status");
@@ -237,27 +260,15 @@ contract TukyFulfillableV1 is ITukyFulfillable {
         } else {
             (bool rlsuccess, uint256 releaseResult) = _releaseablePool.tryAdd(total_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
-            (bool dsuccess, uint256 subResult) = _deposits[fulfillment.payer].trySub(total_amount);
+            (bool dsuccess, uint256 subResult) = _deposits[_fulfillmentRecords[fulfillment.id].payer].trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
             _releaseablePool = releaseResult;
-            _deposits[fulfillment.payer] = subResult;
-            // create a FulfillmentRecord
-            FulFillmentRecord memory fulfillmentRecord = FulFillmentRecord({
-                id: 0,
-                externalID: fulfillment.id,
-                fulfiller: fulfillment.fulfiller,
-                entryTime: block.timestamp,
-                payer: fulfillment.payer,
-                weiAmount: fulfillment.weiAmount,
-                feeAmount: fulfillment.feeAmount, 
-                receiptURI: fulfillment.receiptURI
-            });
-            fulfillmentRecord.id = _fulfillmentIdCount;
-            _fulfillmentIdCount += 1;
-            _fulfillmentRecordCount += 1;
-            _fulfillmentRecords[fulfillmentRecord.id] = fulfillmentRecord;
-            _fulfillmentRecordsForSubject[fulfillmentRecord.payer].push(fulfillmentRecord.id);
+            _deposits[_fulfillmentRecords[fulfillment.id].payer] = subResult;
+            _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment.receiptURI;
+            _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
+            _fulfillmentRecords[fulfillment.id].externalID = fulfillment.externalID;
         }
+        return true;
     }
 
     /**

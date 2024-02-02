@@ -6,7 +6,8 @@ pragma solidity >=0.8.20 <0.9.0;
 */
 enum FulFillmentResultState {
     FAILED,
-    SUCCESS
+    SUCCESS,
+    PENDING
 }
 
 /**
@@ -15,13 +16,16 @@ enum FulFillmentResultState {
 */
 struct FulFillmentRecord {
     uint256 id; // auto-incremental, generated in contract
+    string serviceRef; // identifier required to route the payment to the user's destination
     address fulfiller;
-    uint256 externalID; // id coming from the fulfiller as proof.
+    string externalID; // id coming from the fulfiller as proof.
     address payer; // address of payer
-    uint256 weiAmount; // address of the subject, the recipient of a successful verification
+    uint256 weiAmount; // amount in wei
     uint256 feeAmount; // feeAmount charged in wei
+    uint256 fiatAmount; // fiat amount to be charged for the fufillable
     uint256 entryTime; // time at which the fulfillment was submitted
     string receiptURI; // the fulfillment external receipt uri.
+    FulFillmentResultState status;
 }
 
 /**
@@ -29,7 +33,7 @@ struct FulFillmentRecord {
 */
 struct FulFillmentRequest {
     address payer; // address of payer
-    uint256 weiAmount; // address of the subject, the recipient of a successful verification
+    uint256 weiAmount; // amount in wei
     uint256 fiatAmount; // fiat amount to be charged for the fufillable
     string serviceRef; // identifier required to route the payment to the user's destination
 }
@@ -39,9 +43,8 @@ struct FulFillmentRequest {
 */
 struct FulFillmentResult {
     uint256 id; // id coming from the fulfiller as proof.
-    address fulfiller; //address of the fulfiller that initiated the rsult
-    address payer; // address of payer
-    uint256 weiAmount; // address of the subject, the recipient of a successful verification
+    string externalID; // id coming from the fulfiller as proof.
+    uint256 weiAmount; // amount in wei
     uint256 feeAmount; // feeAmount charged in wei
     string receiptURI; // the fulfillment external receipt uri. 
     FulFillmentResultState status;   
@@ -58,7 +61,7 @@ interface ITukyFulfillable {
 
     function setFee(uint256 amount) external;
 
-    function registerFulfillment(FulFillmentResult memory fulfillment) external;
+    function registerFulfillment(FulFillmentResult memory fulfillment) external returns (bool);
 
     function serviceID() external view returns (uint256);
 
