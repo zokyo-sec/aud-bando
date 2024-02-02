@@ -26,7 +26,6 @@ const DUMMY_VALID_FULFILLMENTREQUEST = {
 let routerContract;
 let regexValidator;
 let v2;
-let signers;
 let registry;
 let manager;
 

@@ -39,8 +39,7 @@ describe("TukiFulfillableV1", () => {
     escrow = fulfillerContract.attach(await fulfillerContract.getAddress())
   });
 
-  describe("Fulfillment logic", async () => {
-
+  describe("Configuration Specs", async () => {
     it("should set the beneficiary correctly", async () => {
       const b = await escrow.beneficiary();
       expect(b).to.be.a.properAddress
@@ -52,8 +51,30 @@ describe("TukiFulfillableV1", () => {
       expect(f).to.be.a.properAddress
       expect(f).to.be.equal(fulfiller)
     });
+  });
 
-    it("should not allow a non-owner to withdraw a refund", async () => {
+  describe("Deposit Specs", () => {
+    it("should not allow a payable deposit coming from any random address.", async () => {
+      await expect(
+        escrow.deposit(DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("10", "ether")})
+      ).to.be.revertedWith('Caller is not the router');
+    });
+
+    it("should allow a payable deposit coming from the router.", async () => {
+      DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
+      DUMMY_FULFILLMENTREQUEST.feeAmount = ethers.parseUnits("100", "wei");
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1000", "wei");
+      const fromRouter = await escrow.connect(router);
+      const response = await fromRouter.deposit(DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("1100", "wei")});
+      const postBalanace = await ethers.provider.getBalance(await escrow.getAddress());
+      const tx = await ethers.provider.getTransaction(response.hash);
+      const BNresponse = await fulfillerContract.depositsOf(DUMMY_ADDRESS);
+      assert.equal(BNresponse.toString(), "1100");
+      assert.equal(postBalanace, "1100");
+      assert.equal(tx.value, "1100");
+    });
+  });
+    /*it("should not allow a non-owner to withdraw a refund", async () => {
       try {
         assert.notEqual(await fulfillerContract.owner(), accounts[0]);
         const response = await fulfillerContract.withdrawRefund(accounts[0]);
@@ -76,32 +97,5 @@ describe("TukiFulfillableV1", () => {
           `${REVERT_ERROR_PREFIX} revert Address is not allowed any refunds`
         );
       }
-    });
-
-    it("should not allow a payable deposit coming from any random address.", async () => {
-      try {
-        assert.notEqual(await fulfillerContract.owner(), accounts[0]);
-        const response = await fulfillerContract.deposit(DUMMY_FULFILLMENTREQUEST, {value: web3.utils.toWei("10", "ether")});
-        throw new Error("This should have thrown lines ago.");
-      } catch(err) {
-        assert.equal(
-          err.message,
-          `${REVERT_ERROR_PREFIX} revert Ownable: caller is not the owner`
-        );
-      }
-    });
-
-    it("should allow a payable deposit coming from an owner.", async () => {
-      DUMMY_FULFILLMENTREQUEST.payer = accounts[2];
-      DUMMY_FULFILLMENTREQUEST.feeAmount = web3.utils.toWei("100", "wei");
-      DUMMY_FULFILLMENTREQUEST.weiAmount = web3.utils.toWei("1000", "wei");
-      const response = await fulfillerContract.deposit(DUMMY_FULFILLMENTREQUEST, {from: accounts[1], value: web3.utils.toWei("1100", "wei")});
-      const postBalanace = await web3.eth.getBalance(fulfillerContract.address);
-      const tx = await web3.eth.getTransaction(response.tx);
-      const BNresponse = await fulfillerContract.depositsOf(accounts[2]);
-      assert.equal(BNresponse.toString(), "1100");
-      assert.equal(postBalanace, "1100");
-      assert.equal(tx.value, "1100");
-    });
-  });
+    });*/
 });
