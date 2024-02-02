@@ -21,19 +21,36 @@ const DUMMY_FULFILLMENTREQUEST = {
   serviceRef: "01234XYZ"
 }
 
-
+let escrow;
 let fulfillerContract;
+let owner;
+let beneficiary;
+let fulfiller;
+let router;
 
-/*describe("TukiFulfillableV1", function (accounts) {
+describe("TukiFulfillableV1", () => {
   
   before(async () => {
-    fulfillerContract = await TukiFulfillableV1.new(DUMMY_ADDRESS, 1, 0);
+    [owner, beneficiary, fulfiller, router] = await ethers.getSigners();
+    fulfillerContract = await ethers.deployContract('TukyFulfillableV1', [
+      beneficiary, 1, ethers.parseUnits('1'), router, fulfiller
+    ]);
+    await fulfillerContract.waitForDeployment();
+    escrow = fulfillerContract.attach(await fulfillerContract.getAddress())
   });
 
   describe("Fulfillment logic", async () => {
-    it("should allow owner to transfer ownership", async () => {
-      await fulfillerContract.transferOwnership(accounts[1]);
-      assert.equal(await fulfillerContract.owner(), accounts[1]);
+
+    it("should set the beneficiary correctly", async () => {
+      const b = await escrow.beneficiary();
+      expect(b).to.be.a.properAddress
+      expect(b).to.be.equal(beneficiary)
+    });
+
+    it("should set the fulfiller correctly", async () => {
+      const f = await escrow.fulfiller();
+      expect(f).to.be.a.properAddress
+      expect(f).to.be.equal(fulfiller)
     });
 
     it("should not allow a non-owner to withdraw a refund", async () => {
@@ -87,4 +104,4 @@ let fulfillerContract;
       assert.equal(tx.value, "1100");
     });
   });
-});*/
+});

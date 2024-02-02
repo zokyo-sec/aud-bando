@@ -182,7 +182,7 @@ describe("TukyRouterV1", function () {
         };
     });
 
-    it("should send to escrow", async () => {
+    it("should route to service escrow", async () => {
       const service = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       const feeAmount = new BN(service.feeAmount.toString());

@@ -111,14 +111,6 @@ contract TukyFulfillableV1 is ITukyFulfillable {
         return _serviceIdentifier;
     }
 
-
-    /**
-     * @return The fee amount in wei of the escrow.
-     */
-    function feeAmount() public view virtual returns (uint256) {
-        return _feeAmount;
-    }
-
     /**
      * @return Total deposits from a payer
      */
