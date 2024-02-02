@@ -2,18 +2,7 @@ const { expect, assert } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
-const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
 
-/**
-* @dev Anybody can submit a fulfillment request through a router.
-* struct FulFillmentRequest {
-*  address payer; // address of payer
-* uint256 weiAmount; // address of the subject, the recipient of a successful verification
-*  uint256 fiatAmount; // fiat amount to be charged for the fufillable
-*  uint256 feeAmount; // fee amount in wei
-*  string serviceRef; // identifier required to route the payment to the user's destination
-*}
-**/
 const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: 0,
@@ -72,6 +61,25 @@ describe("TukiFulfillableV1", () => {
       assert.equal(BNresponse.toString(), "1100");
       assert.equal(postBalanace, "1100");
       assert.equal(tx.value, "1100");
+    });
+
+    it("should emit a DepositReceived event", async () => {
+      DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
+      DUMMY_FULFILLMENTREQUEST.feeAmount = ethers.parseUnits("101", "wei");
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1000", "wei");
+      const fromRouter = await escrow.connect(router);
+      await expect(
+        fromRouter.deposit(DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("1101", "wei")})
+      ).to.emit(escrow, "DepositReceived")
+    });
+
+    it("should persist unique fulfillment records on the blockchain", async () => {
+      const payerRecordIds = await escrow.recordsOf(DUMMY_ADDRESS);
+      const record1 = await escrow.record(payerRecordIds[0]);
+      expect(record1[0]).to.be.equal(1);
+      expect(record1[2]).to.be.equal(await fulfiller.getAddress());
+      expect(record1[4]).to.be.equal(DUMMY_ADDRESS);
+      expect(record1[10]).to.be.equal(2);
     });
   });
     /*it("should not allow a non-owner to withdraw a refund", async () => {

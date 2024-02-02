@@ -128,6 +128,23 @@ contract TukyFulfillableV1 is ITukyFulfillable {
     }
 
     /**
+     * recordsOf
+     * @dev Returns the fulfillment records for a given payer.
+     * @param payer the address of the payer
+     */
+    function recordsOf(address payer) public view returns (uint256[] memory) {
+        return _fulfillmentRecordsForSubject[payer];
+    }
+
+    /**
+     * @dev Returns the fulfillment record for a given id.
+     * @param id the id of the record
+     */
+    function record(uint256 id) public view returns (FulFillmentRecord memory) {
+        return _fulfillmentRecords[id];
+    }
+
+    /**
      * @dev Stores the sent amount as credit to be claimed.
      * @param fulfillmentRequest The fulfillment record to be stored.
      * 
@@ -244,7 +261,6 @@ contract TukyFulfillableV1 is ITukyFulfillable {
      * @param fulfillment the fulfillment result attached to it.
      */
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual returns (bool) {
-        // check that fulfillment record is present
         require(_manager == msg.sender, "Caller is not the manager");
         require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
         (bool ffsuccess, uint256 total_amount) = fulfillment.weiAmount.tryAdd(_feeAmount);
