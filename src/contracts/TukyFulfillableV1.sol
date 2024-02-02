@@ -83,7 +83,6 @@ contract TukyFulfillableV1 is ITukyFulfillable {
         address payable beneficiary_,
         uint256 serviceIdentifier_,
         uint256 feeAmount_,
-        address manager_,
         address router_,
         address fulfiller_
     ) {
@@ -94,7 +93,7 @@ contract TukyFulfillableV1 is ITukyFulfillable {
         _serviceIdentifier = serviceIdentifier_;
         _feeAmount = feeAmount_;
         _fulfiller = fulfiller_;
-        _manager = manager_;
+        _manager = msg.sender;
         _router = router_;
     }
 

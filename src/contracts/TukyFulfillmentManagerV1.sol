@@ -71,11 +71,11 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         public 
         virtual
         onlyOwner 
-        returns (address[2] memory) 
+        returns (address[2] memory)
     {
         require(serviceID > 0, "Service ID is invalid");
         require(address(validator) != address(0), "Validator address is required.");
-        TukyFulfillableV1 _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, msg.sender, router, fulfiller);
+        TukyFulfillableV1 _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
         _escrow.setFee(feeAmount);
         IFulfillableRegistry(_serviceRegistry).addService(serviceID, Service({
             serviceId: serviceID,

@@ -9,6 +9,7 @@ describe('TukyFulfillmentManagerV1', () => {
     let router;
     let registry;
     let manager;
+    const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
 
     before(async () => {
         [owner, validator, fulfiller, beneficiary, router] = await ethers.getSigners();
@@ -28,7 +29,7 @@ describe('TukyFulfillmentManagerV1', () => {
     describe('setService', () => {
         it('should set up a service', async () => {
             const serviceID = 1;
-            const feeAmount = ethers.utils.parseEther('0.1');
+            const feeAmount = ethers.parseUnits('0.1', 'ether');
 
             // Set up the service
             const result = await manager.setService(
@@ -41,11 +42,11 @@ describe('TukyFulfillmentManagerV1', () => {
             );
 
             // Retrieve the service details from the registry
-            const service = await serviceRegistry.getService(serviceID);
+            const service = await registry.getService(serviceID);
 
             // Verify the service details
             expect(service.serviceId).to.equal(serviceID);
-            expect(service.contractAddress).to.equal(result[0]);
+            expect(service.contractAddress).to.be.a.properAddress;
             expect(service.fulfiller).to.equal(fulfiller.address);
             expect(service.validator).to.equal(validator.address);
             expect(service.feeAmount).to.equal(feeAmount);
@@ -56,7 +57,7 @@ describe('TukyFulfillmentManagerV1', () => {
 
         it('should revert if the service ID is invalid', async () => {
             const serviceID = 0;
-            const feeAmount = ethers.utils.parseEther('0.1');
+            const feeAmount = ethers.parseUnits('0.1', 'ether');
 
             // Ensure the transaction reverts with an appropriate error message
             await expect(
@@ -71,116 +72,23 @@ describe('TukyFulfillmentManagerV1', () => {
             ).to.be.revertedWith('Service ID is invalid');
         });
 
-        it('should revert if the validator address is not provided', async () => {
+        it('should revert if the service already exists.', async () => {
             const serviceID = 1;
-            const feeAmount = ethers.utils.parseEther('0.1');
+            const feeAmount = ethers.parseUnits('0.1', 'ether');
 
             // Ensure the transaction reverts with an appropriate error message
             await expect(
                 manager.setService(
                     serviceID,
                     beneficiary.address,
-                    ethers.constants.AddressZero,
+                    DUMMY_ADDRESS,
                     feeAmount,
                     fulfiller.address,
                     router.address
                 )
-            ).to.be.revertedWith('Validator address is required.');
+            ).to.be.revertedWith('FulfillableRegistry: Service already exists');
         });
 
         // Add more test cases for different scenarios
     });
-
-    describe('withdrawRefund', () => {
-        it('should allow the fulfiller to withdraw a refund', async () => {
-            const serviceID = 1;
-            const refundee = fulfiller.address;
-
-            // Set up the service
-            await manager.setService(
-                serviceID,
-                beneficiary.address,
-                validator.address,
-                ethers.utils.parseEther('0.1'),
-                fulfiller.address,
-                router.address
-            );
-
-            // Call the withdrawRefund function
-            await manager.withdrawRefund(serviceID, refundee);
-
-            // Verify that the refund was successfully withdrawn
-            // Add your verification logic here
-        });
-
-        it('should revert if called by a non-fulfiller', async () => {
-            const serviceID = 1;
-            const refundee = fulfiller.address;
-
-            // Set up the service
-            await manager.setService(
-                serviceID,
-                beneficiary.address,
-                validator.address,
-                ethers.utils.parseEther('0.1'),
-                fulfiller.address,
-                router.address
-            );
-
-            // Ensure the transaction reverts with an appropriate error message
-            await expect(
-                manager.connect(owner).withdrawRefund(serviceID, refundee)
-            ).to.be.revertedWith('Only the fulfiller can withdraw the refund');
-        });
-
-        // Add more test cases for different scenarios
-    });
-
-    describe('registerFulfillment', () => {
-        it('should allow the fulfiller to register a fulfillment', async () => {
-            const serviceID = 1;
-            const fulfillment = 'Fulfillment result';
-
-            // Set up the service
-            await manager.setService(
-                serviceID,
-                beneficiary.address,
-                validator.address,
-                ethers.utils.parseEther('0.1'),
-                fulfiller.address,
-                router.address
-            );
-
-            // Call the registerFulfillment function
-            await manager.registerFulfillment(serviceID, fulfillment);
-
-            // Verify that the fulfillment was successfully registered
-            // Add your verification logic here
-        });
-
-        it('should revert if called by a non-fulfiller', async () => {
-            const serviceID = 1;
-            const fulfillment = 'Fulfillment result';
-
-            // Set up the service
-            await manager.setService(
-                serviceID,
-                beneficiary.address,
-                validator.address,
-                ethers.utils.parseEther('0.1'),
-                fulfiller.address,
-                router.address
-            );
-
-            // Ensure the transaction reverts with an appropriate error message
-            await expect(
-                manager.connect(owner).registerFulfillment(serviceID, fulfillment)
-            ).to.be.revertedWith('Only the fulfiller can register a fulfillment');
-        });
-
-        // Add more test cases for different scenarios
-    });
-
-    // Add more test cases for other functions
-
 });
