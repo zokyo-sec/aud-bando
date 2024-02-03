@@ -42,10 +42,8 @@ struct FulFillmentRequest {
 * @dev A fulfiller will submit a fulfillment result in this format.
 */
 struct FulFillmentResult {
-    uint256 id; // id coming from the fulfiller as proof.
+    uint256 id; // id of the fulfillment record.
     string externalID; // id coming from the fulfiller as proof.
-    uint256 weiAmount; // amount in wei
-    uint256 feeAmount; // feeAmount charged in wei
     string receiptURI; // the fulfillment external receipt uri. 
     FulFillmentResultState status;   
 }

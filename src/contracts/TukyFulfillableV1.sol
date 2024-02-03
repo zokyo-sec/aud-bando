@@ -263,9 +263,9 @@ contract TukyFulfillableV1 is ITukyFulfillable {
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
         require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
-        (bool ffsuccess, uint256 total_amount) = fulfillment.weiAmount.tryAdd(_feeAmount);
+        (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[fulfillment.id].weiAmount.tryAdd(_feeAmount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");
-        require(_deposits[_fulfillmentRecords[fulfillment.id].payer] >= total_amount, "There is not enough balance to be released.");
+        require(_deposits[_fulfillmentRecords[fulfillment.id].payer] >= total_amount, "There is not enough balance to be released");
         if(fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(_fulfillmentRecords[fulfillment.id].payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;

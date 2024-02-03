@@ -1,13 +1,22 @@
 const { expect, assert } = require("chai");
 const { ethers, upgrades } = require("hardhat");
+const { v4: uuidv4 } = require('uuid');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 
 const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
-  weiAmount: 0,
+  weiAmount: 100,
   fiatAmount: 10,
   serviceRef: "01234XYZ"
+}
+ 
+const SUCCESS_FULFILLMENT_RESULT = {
+  status: 1,
+  weiAmount: 100,
+  externalID: uuidv4(),
+  receiptURI: 'https://test.com',
+  id: null,
 }
 
 let escrow;
@@ -22,7 +31,7 @@ describe("TukiFulfillableV1", () => {
   before(async () => {
     [owner, beneficiary, fulfiller, router] = await ethers.getSigners();
     fulfillerContract = await ethers.deployContract('TukyFulfillableV1', [
-      beneficiary, 1, ethers.parseUnits('1'), router, fulfiller
+      beneficiary, 1, ethers.parseUnits('1', 'wei'), router, fulfiller
     ]);
     await fulfillerContract.waitForDeployment();
     escrow = fulfillerContract.attach(await fulfillerContract.getAddress())
@@ -51,35 +60,48 @@ describe("TukiFulfillableV1", () => {
 
     it("should allow a payable deposit coming from the router.", async () => {
       DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
-      DUMMY_FULFILLMENTREQUEST.feeAmount = ethers.parseUnits("100", "wei");
-      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1000", "wei");
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
       const fromRouter = await escrow.connect(router);
-      const response = await fromRouter.deposit(DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("1100", "wei")});
+      const response = await fromRouter.deposit(DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("101", "wei")});
       const postBalanace = await ethers.provider.getBalance(await escrow.getAddress());
       const tx = await ethers.provider.getTransaction(response.hash);
       const BNresponse = await fulfillerContract.depositsOf(DUMMY_ADDRESS);
-      assert.equal(BNresponse.toString(), "1100");
-      assert.equal(postBalanace, "1100");
-      assert.equal(tx.value, "1100");
+      assert.equal(BNresponse.toString(), "101");
+      assert.equal(postBalanace, "101");
+      assert.equal(tx.value, "101");
     });
 
     it("should emit a DepositReceived event", async () => {
       DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
-      DUMMY_FULFILLMENTREQUEST.feeAmount = ethers.parseUnits("101", "wei");
-      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1000", "wei");
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
       const fromRouter = await escrow.connect(router);
       await expect(
-        fromRouter.deposit(DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("1101", "wei")})
+        fromRouter.deposit(DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("101", "wei")})
       ).to.emit(escrow, "DepositReceived")
     });
 
     it("should persist unique fulfillment records on the blockchain", async () => {
       const payerRecordIds = await escrow.recordsOf(DUMMY_ADDRESS);
       const record1 = await escrow.record(payerRecordIds[0]);
-      expect(record1[0]).to.be.equal(1);
-      expect(record1[2]).to.be.equal(await fulfiller.getAddress());
-      expect(record1[4]).to.be.equal(DUMMY_ADDRESS);
-      expect(record1[10]).to.be.equal(2);
+      expect(record1[0]).to.be.equal(1); //record ID
+      expect(record1[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
+      expect(record1[4]).to.be.equal(DUMMY_ADDRESS); //payer address
+      expect(record1[10]).to.be.equal(2); //status. 2 = PENDING
+    });
+  });
+
+  describe("Register Fulfillment Specs", () => {
+    it("should only allow to register a fulfillment via the manager", async () => {
+      const fromRouter = await escrow.connect(router);
+      const payerRecordIds = await fromRouter.recordsOf(DUMMY_ADDRESS);
+      SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
+      console.log(SUCCESS_FULFILLMENT_RESULT);
+      await expect(
+        fromRouter.registerFulfillment(SUCCESS_FULFILLMENT_RESULT)
+      ).to.be.revertedWith('Caller is not the manager');
+      const d = await escrow.depositsOf(DUMMY_ADDRESS);
+      console.log(d);
+      await escrow.registerFulfillment(SUCCESS_FULFILLMENT_RESULT);
     });
   });
     /*it("should not allow a non-owner to withdraw a refund", async () => {
