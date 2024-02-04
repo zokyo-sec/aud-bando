@@ -32,7 +32,6 @@ contract TukyFulfillableV1 is ITukyFulfillable {
     event DepositReceived(FulFillmentRecord record);
     event RefundWithdrawn(address indexed payee, uint256 weiAmount);
     event RefundAuthorized(address indexed payee, uint256 weiAmount);
-    event LogFailure(string message);
     event FeeUpdated(uint256 serviceID, uint256 amount);
 
     /*****************************/
@@ -270,9 +269,7 @@ contract TukyFulfillableV1 is ITukyFulfillable {
             _authorizeRefund(_fulfillmentRecords[fulfillment.id].payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
-            // unexpected happened. must better log this.
-            emit LogFailure("Fulfillment result was submitted with unexpected status");
-            revert();
+            revert('Unexpected status');
         } else {
             (bool rlsuccess, uint256 releaseResult) = _releaseablePool.tryAdd(total_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");

@@ -19,6 +19,22 @@ const SUCCESS_FULFILLMENT_RESULT = {
   id: null,
 }
 
+const INVALID_FULFILLMENT_RESULT = {
+  status: 3,
+  weiAmount: 100,
+  externalID: uuidv4(),
+  receiptURI: 'https://test.com',
+  id: null,
+}
+
+const FAILED_FULFILLMENT_RESULT = {
+  status: 0,
+  weiAmount: 100,
+  externalID: uuidv4(),
+  receiptURI: 'https://test.com',
+  id: null,
+}
+
 let escrow;
 let fulfillerContract;
 let owner;
@@ -99,9 +115,39 @@ describe("TukiFulfillableV1", () => {
       await expect(
         fromRouter.registerFulfillment(SUCCESS_FULFILLMENT_RESULT)
       ).to.be.revertedWith('Caller is not the manager');
-      const d = await escrow.depositsOf(DUMMY_ADDRESS);
-      console.log(d);
-      await escrow.registerFulfillment(SUCCESS_FULFILLMENT_RESULT);
+      await expect(
+        escrow.registerFulfillment(SUCCESS_FULFILLMENT_RESULT)
+      ).not.to.be.reverted;
+      const record = await escrow.record(payerRecordIds[0]);
+      expect(record[10]).to.be.equal(1);
+    });
+
+    it("should not allow to register a fulfillment with an invalid status.", async () => {
+      const payerRecordIds = await escrow.recordsOf(DUMMY_ADDRESS);
+      INVALID_FULFILLMENT_RESULT.id = payerRecordIds[1];
+      await expect(
+        escrow.registerFulfillment(INVALID_FULFILLMENT_RESULT)
+      ).to.be.reverted;
+      const record = await escrow.record(payerRecordIds[1]);
+      expect(record[10]).to.be.equal(2);
+    });
+
+    it("should allow to register a fulfillment with a failed status.", async () => {
+      const payerRecordIds = await escrow.recordsOf(DUMMY_ADDRESS);
+      FAILED_FULFILLMENT_RESULT.id = payerRecordIds[1];
+      await expect(
+        escrow.registerFulfillment(FAILED_FULFILLMENT_RESULT)
+      ).not.to.be.reverted;
+      const record = await escrow.record(payerRecordIds[1]);
+      expect(record[10]).to.be.equal(0);
+    });
+
+    it("should not allow to register a fulfillment when there are not enough deposits in escrow.", async () => {
+      
+    });
+
+    it("should not allow to register a fulfillment when it already was registered.", async () => {
+      
     });
   });
     /*it("should not allow a non-owner to withdraw a refund", async () => {
