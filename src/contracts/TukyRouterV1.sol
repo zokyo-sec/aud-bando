@@ -7,10 +7,10 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./IIdentifierValidator.sol";
+import "./periphery/validators/IIdentifierValidator.sol";
 import "./ITukyFulfillable.sol";
 import "./TukyFulfillableV1.sol";
-import "./IFulfillableRegistry.sol";
+import "./periphery/registry/IFulfillableRegistry.sol";
 
 
 /**

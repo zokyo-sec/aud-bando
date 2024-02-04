@@ -3,7 +3,7 @@ pragma solidity >=0.8.20 <0.9.0;
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import './IFulfillableRegistry.sol';
+import './periphery/registry/IFulfillableRegistry.sol';
 import './ITukyFulfillable.sol';
 import './TukyFulfillableV1.sol';
 
