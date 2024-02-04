@@ -6,6 +6,7 @@ pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./ITukyFulfillable.sol";
 
 /**
@@ -186,7 +187,7 @@ contract TukyFulfillableV1 is ITukyFulfillable {
      * @param refundee The address whose funds will be withdrawn and transferred to.
      */
     function withdrawRefund(address payable refundee) public virtual returns (bool) {
-        require(_manager == msg.sender, "Caller is not the fulfiller");
+        require(_manager == msg.sender, "Caller is not the manager");
         require(_authorized_refunds[refundee] > 0, "Address is not allowed any refunds");
         uint256 refund_amount = _authorized_refunds[refundee];
         _authorized_refunds[refundee] = 0;
@@ -261,6 +262,7 @@ contract TukyFulfillableV1 is ITukyFulfillable {
      */
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
+        require(Strings.equal(_fulfillmentRecords[fulfillment.id].externalID, fulfillment.externalID) == false, "Fulfillment already registered");
         require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
         (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[fulfillment.id].weiAmount.tryAdd(_feeAmount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");

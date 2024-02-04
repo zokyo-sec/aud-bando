@@ -111,7 +111,6 @@ describe("TukiFulfillableV1", () => {
       const fromRouter = await escrow.connect(router);
       const payerRecordIds = await fromRouter.recordsOf(DUMMY_ADDRESS);
       SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
-      console.log(SUCCESS_FULFILLMENT_RESULT);
       await expect(
         fromRouter.registerFulfillment(SUCCESS_FULFILLMENT_RESULT)
       ).to.be.revertedWith('Caller is not the manager');
@@ -132,46 +131,32 @@ describe("TukiFulfillableV1", () => {
       expect(record[10]).to.be.equal(2);
     });
 
-    it("should allow to register a fulfillment with a failed status.", async () => {
+    it("should authorize a refund after register a fulfillment with a failed status.", async () => {
       const payerRecordIds = await escrow.recordsOf(DUMMY_ADDRESS);
       FAILED_FULFILLMENT_RESULT.id = payerRecordIds[1];
-      await expect(
-        escrow.registerFulfillment(FAILED_FULFILLMENT_RESULT)
-      ).not.to.be.reverted;
+      const r = await escrow.registerFulfillment(FAILED_FULFILLMENT_RESULT);
+      expect(r).not.to.be.reverted;
+      expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(DUMMY_ADDRESS, ethers.parseUnits('101', 'wei'));
       const record = await escrow.record(payerRecordIds[1]);
       expect(record[10]).to.be.equal(0);
     });
 
-    it("should not allow to register a fulfillment when there are not enough deposits in escrow.", async () => {
-      
+    it("should allow manager to withdraw a refund.", async () => {
+      const r = await escrow.withdrawRefund(DUMMY_ADDRESS);
+      expect(r).not.to.be.reverted;
+      expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(DUMMY_ADDRESS, ethers.parseUnits('101', 'wei'));
+      const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
+      expect(postBalance).to.be.equal(101);
+    });
+
+    it("should not allow manager to withdraw a refund when there is none.", async () => {
+      await expect(
+        escrow.withdrawRefund(DUMMY_ADDRESS)
+      ).to.be.revertedWith('Address is not allowed any refunds');
     });
 
     it("should not allow to register a fulfillment when it already was registered.", async () => {
       
     });
   });
-    /*it("should not allow a non-owner to withdraw a refund", async () => {
-      try {
-        assert.notEqual(await fulfillerContract.owner(), accounts[0]);
-        const response = await fulfillerContract.withdrawRefund(accounts[0]);
-        throw new Error("This should have thrown lines ago.");
-      } catch(err) {
-        assert.equal(
-          err.message,
-          `${REVERT_ERROR_PREFIX} revert Ownable: caller is not the owner`
-        );
-      }
-    });
-
-    it("should not allow to refund when payee has no authorized balance.", async () => {
-      try {
-        const response = await fulfillerContract.withdrawRefund(accounts[1], {from: accounts[1]});
-        throw new Error("This should have thrown lines ago.");
-      } catch(err) {
-        assert.equal(
-          err.message,
-          `${REVERT_ERROR_PREFIX} revert Address is not allowed any refunds`
-        );
-      }
-    });*/
 });
