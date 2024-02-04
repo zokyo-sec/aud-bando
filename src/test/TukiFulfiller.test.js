@@ -156,7 +156,13 @@ describe("TukiFulfillableV1", () => {
     });
 
     it("should not allow to register a fulfillment when it already was registered.", async () => {
-      
+      const payerRecordIds = await escrow.recordsOf(DUMMY_ADDRESS);
+      const record1 = await escrow.record(payerRecordIds[0]);
+      const extID = record1[3];
+      SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
+      await expect(
+        escrow.registerFulfillment(SUCCESS_FULFILLMENT_RESULT)
+      ).to.be.revertedWith('Fulfillment already registered');
     });
   });
 });
