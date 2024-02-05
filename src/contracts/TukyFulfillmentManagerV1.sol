@@ -6,6 +6,7 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './periphery/registry/IFulfillableRegistry.sol';
 import './ITukyFulfillable.sol';
 import './TukyFulfillableV1.sol';
+import './FulfillmentTypes.sol';
 
 /**
  * @title TukyFulfillmentManager

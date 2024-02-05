@@ -6,21 +6,22 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./periphery/validators/IIdentifierValidator.sol";
 import "./ITukyFulfillable.sol";
-import "./TukyFulfillableV1.sol";
 import "./periphery/registry/IFulfillableRegistry.sol";
+import "./FulfillmentTypes.sol";
 
 
 /**
  * ----- TukyRouter -----
  * This Smart Contract is intented to be user-facing.
  * Any valid address can request a fulfillment to a valid fulfillable.
+ * 
+ * The contract will validate the request and transfer the payment to the fulfillable contract.
  * -----------------------
  */
+
 contract TukyRouterV1 is 
-    Initializable,
     OwnableUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable {
@@ -74,7 +75,7 @@ contract TukyRouterV1 is
      * 
      * 
      * Post-conditions:
-     * - payment due is trasferred to escrow contract until fulfillment
+     * - payment due is transferred to escrow contract until fulfillment
      */
     function requestService(
         uint256 serviceID, FulFillmentRequest memory request) public payable whenNotPaused returns (bool)
@@ -90,6 +91,7 @@ contract TukyRouterV1 is
         require(success, "Overflow while adding fee and amount");
         require(msg.value == total_amount, "Transaction total does not match fee + amount.");
         ITukyFulfillable(service.contractAddress).deposit{value: msg.value}(request);
+        emit ServiceRequested(serviceID, request);
         return true;
     }
     

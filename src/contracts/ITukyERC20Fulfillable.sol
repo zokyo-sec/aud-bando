@@ -4,15 +4,16 @@ pragma solidity >=0.8.20 <0.9.0;
 import "./FulfillmentTypes.sol";
 
 /**
-* @dev Interface for tuky fulfillment protocol escrow.
+* @dev Interface for tuky fulfillment protocol ERC20 support escrow.
 * This interface is intented to be implemented by any contract that wants to be a fulfillable.
+* It is the same a the TukyFulfillable interface but for ERC20 transfers.
 * A fulfillable is a contract that can accept fulfillments from a router.
 * The router will route fulfillments to the fulfillable based on the serviceID.
 */
-interface ITukyFulfillable {
-    function deposit(FulFillmentRequest memory request) external payable;
+interface ITukyERC20Fulfillable {
+    function depositERC20(ERC20FulFillmentRequest memory request) external payable;
 
-    function setFee(uint256 amount) external;
+    function setERC20Fee(address token, uint256 amount) external;
 
     function registerFulfillment(FulFillmentResult memory fulfillment) external returns (bool);
 
@@ -22,7 +23,7 @@ interface ITukyFulfillable {
 
     function recordsOf(address payer) external view returns (uint256[] memory);
 
-    function record(uint256 id) external view returns (FulFillmentRecord memory);
+    function record(uint256 id) external view returns (ERC20FulFillmentRecord memory);
 
-    function withdrawRefund(address payable refundee) external returns (bool);
+    function withdrawERC20Refund(address token, address payable refundee) external returns (bool);
 }
