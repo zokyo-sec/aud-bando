@@ -11,7 +11,7 @@ import "./FulfillmentTypes.sol";
 * The router will route fulfillments to the fulfillable based on the serviceID.
 */
 interface ITukyERC20Fulfillable {
-    function depositERC20(ERC20FulFillmentRequest memory request) external payable;
+    function depositERC20(ERC20FulFillmentRequest memory request) external;
 
     function setERC20Fee(address token, uint256 amount) external;
 
@@ -25,5 +25,5 @@ interface ITukyERC20Fulfillable {
 
     function record(uint256 id) external view returns (ERC20FulFillmentRecord memory);
 
-    function withdrawERC20Refund(address token, address payable refundee) external returns (bool);
+    function withdrawERC20Refund(address token, address refundee) external returns (bool);
 }

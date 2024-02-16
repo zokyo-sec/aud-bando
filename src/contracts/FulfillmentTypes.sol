@@ -49,6 +49,7 @@ struct ERC20FulFillmentRecord {
     uint256 id; // auto-incremental, generated in contract
     string serviceRef; // identifier required to route the payment to the user's destination
     address fulfiller;
+    address token; // address of the ERC20 token to be used for the payment
     string externalID; // id coming from the fulfiller as proof.
     address payer; // address of payer
     uint256 tokenAmount; // amount
