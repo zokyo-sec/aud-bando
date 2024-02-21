@@ -151,6 +151,8 @@ contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
         require(_router == msg.sender, "Caller is not the router");
         uint256 amount = fulfillmentRequest.tokenAmount;
         address token = fulfillmentRequest.token;
+        // check for deposits on that token
+
         (bool success, uint256 result) = amount.tryAdd(_deposits[token][fulfillmentRequest.payer]);
         require(success, "Overflow while adding deposits");
         // transfer the ERC20 token to this contract
@@ -281,6 +283,7 @@ contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
     function registerFulfillment(FulFillmentResult memory fulfillment) public virtual returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
         require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
+        require(_fulfillmentRecords[fulfillment.id].status == FulFillmentResultState.PENDING, "Fulfillment already registered");
         address token = _fulfillmentRecords[fulfillment.id].token;
         (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[fulfillment.id].tokenAmount.tryAdd(
             _feeAmounts[token]
