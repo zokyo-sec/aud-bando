@@ -161,6 +161,8 @@ describe("TukiERC20FulfillableV1", () => {
       await expect(
         escrow.withdrawERC20Refund(erc20Test, owner)
       ).to.be.revertedWith('Address is not allowed any refunds');
+      // check balances post withdraw
+      const erc20PostBalance = await erc20Test.balanceOf(await escrow.getAddress());
     });
 
     it("should not allow to register a fulfillment when it already was registered.", async () => {
