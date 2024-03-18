@@ -90,6 +90,20 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
+     * setServiceRef
+     * 
+     * This method must only be called by the owner.
+     * It sets up a service reference for a service.
+     * @param serviceID uint256 service identifier
+     * @param serviceRef string service reference
+     * @return bool
+     */
+    function setServiceRef(uint256 serviceID, string memory serviceRef) public virtual onlyOwner returns (bool) {
+        IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
+        return true;
+    }
+    
+    /**
      * @dev withdrawRefund
      * This method must only be called by the service fulfiller or the owner.
      * @param serviceID uint256 service identifier
