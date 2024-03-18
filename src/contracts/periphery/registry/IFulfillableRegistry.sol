@@ -19,7 +19,6 @@ struct Service {
     uint256 serviceId;
     address contractAddress;
     address fulfiller;
-    address validator;
     uint256 feeAmount;
 }
 
@@ -36,5 +35,9 @@ interface IFulfillableRegistry {
     function getService(uint256 serviceId) external view returns (Service memory);
 
     function removeServiceAddress(uint256 serviceId) external;
+
+    function addServiceRef(uint256 serviceId, string memory serviceRef) external returns (string[] memory);
+
+    function isRefValid(uint256 serviceId, string memory serviceRef) external view returns (bool);
 
 }

@@ -6,7 +6,6 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./periphery/validators/IIdentifierValidator.sol";
 import "./ITukyFulfillable.sol";
 import "./periphery/registry/IFulfillableRegistry.sol";
 import "./FulfillmentTypes.sol";
@@ -84,8 +83,8 @@ contract TukyRouterV1 is
         require(request.fiatAmount > 0, "Fiat amount is invalid");
         Service memory service = IFulfillableRegistry(_fulfillableRegistry).getService(serviceID);
         require(
-            IIdentifierValidator(service.validator).matches(request.serviceRef),
-            "The service identifier failed to validate"
+            IFulfillableRegistry(_fulfillableRegistry).isRefValid(serviceID, request.serviceRef),
+            "ref not in registry"
         );
         (bool success, uint256 total_amount) = request.weiAmount.tryAdd(service.feeAmount);
         require(success, "Overflow while adding fee and amount");

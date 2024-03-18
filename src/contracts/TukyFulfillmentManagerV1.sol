@@ -38,7 +38,7 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     address private _serviceRegistry;
 
-    event ServiceAdded(uint256 serviceID, address escrow, address validator, address fulfiller);
+    event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
     function initialize(address serviceRegistry) public virtual initializer {
         __Ownable_init(msg.sender);
@@ -64,7 +64,6 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     function setService(
         uint256 serviceID,
         address payable beneficiaryAddress,
-        address validator,
         uint256 feeAmount,
         address fulfiller,
         address router
@@ -72,21 +71,32 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         public 
         virtual
         onlyOwner 
-        returns (address[2] memory)
+        returns (address)
     {
         require(serviceID > 0, "Service ID is invalid");
-        require(address(validator) != address(0), "Validator address is required.");
         TukyFulfillableV1 _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
         _escrow.setFee(feeAmount);
         IFulfillableRegistry(_serviceRegistry).addService(serviceID, Service({
             serviceId: serviceID,
             contractAddress: address(_escrow),
             fulfiller: fulfiller,
-            validator: validator,
             feeAmount: feeAmount
         }));
-        emit ServiceAdded(serviceID, address(_escrow), validator, fulfiller);
-        return [address(_escrow), validator];
+        emit ServiceAdded(serviceID, address(_escrow), fulfiller);
+        return address(_escrow);
+    }
+
+    /**
+     * setServiceRef
+     * 
+     * This method must only be called by the owner.
+     * It sets up a service reference for a service.
+     * @param serviceID uint256 service identifier
+     * @param serviceRef string service reference
+     * @return bool
+     */
+    function setServiceRef(uint256 serviceID, string memory serviceRef) public virtual onlyOwner returns (string[] memory) {
+        return IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
     }
 
     /**
