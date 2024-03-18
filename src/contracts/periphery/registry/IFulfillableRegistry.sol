@@ -19,7 +19,6 @@ struct Service {
     uint256 serviceId;
     address contractAddress;
     address fulfiller;
-    address validator;
     uint256 feeAmount;
 }
 

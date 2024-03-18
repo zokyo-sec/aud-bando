@@ -51,12 +51,6 @@ describe("TukyRouterV1", function () {
     await routerContract.waitForDeployment();
     v1 = TukyRouterV1.attach(await routerContract.getAddress());
     /**
-     * deploy validator
-     */
-    const Validator = await ethers.deployContract('TwelveDigitsValidator');
-    await Validator.waitForDeployment()
-    regexValidator = Validator.attach(await Validator.getAddress())
-    /**
      * deploy manager
      */
     const Manager = await ethers.getContractFactory('TukyFulfillmentManagerV1');
@@ -70,7 +64,6 @@ describe("TukyRouterV1", function () {
     manager.setService(
       1,
       await beneficiary.getAddress(),
-      await Validator.getAddress(),
       feeAmount,
       await fulfiller.getAddress(),
       await routerContract.getAddress()
