@@ -37,4 +37,8 @@ interface IFulfillableRegistry {
 
     function removeServiceAddress(uint256 serviceId) external;
 
+    function addServiceRef(uint256 serviceId, string memory serviceRef) external;
+
+    function isRefValid(uint256 serviceId, string memory serviceRef) external view returns (bool);
+
 }

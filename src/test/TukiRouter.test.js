@@ -1,6 +1,7 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect, assert } = require('chai');
 const BN = require('bn.js')
+const uuid = require('uuid');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
@@ -163,12 +164,6 @@ describe("TukyRouterV1", function () {
         ).to.be.revertedWith('Amount must be greater than zero');
     });
 
-    it("should fail when the validator doesnt match", async () => {
-      await expect(
-        v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")})
-      ).to.be.revertedWith('The service identifier failed to validate');
-    });
-
     it("should fail with insufficient funds error", async () => {
         const service = await registry.getService(1);
         const feeAmount = new BN(service.feeAmount.toString());
@@ -179,6 +174,16 @@ describe("TukyRouterV1", function () {
         } catch (err) {
           assert.include(err.message, "sender doesn't have enough funds to send tx");
         };
+    });
+
+    it("should fail with invalid Ref", async () => {
+      const invalidRef = "1234567890";
+      const validRef = uuid.v4();
+      const invalidRequest = DUMMY_VALID_FULFILLMENTREQUEST;
+      invalidRequest.serviceRef = invalidRef;
+      await expect(
+        v2.requestService(1, invalidRequest, { value: ethers.parseUnits("1", "ether") })
+      ).to.be.revertedWith('ref not in registry');
     });
 
     it("should route to service escrow", async () => {
