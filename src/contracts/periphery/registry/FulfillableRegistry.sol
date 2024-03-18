@@ -16,7 +16,7 @@ import './IFulfillableRegistry.sol';
  * @dev This contract uses UUPSUpgradeable.
  * 
  */
-contract FulfillableRegistry is UUPSUpgradeable, OwnableUpgradeable {
+contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
 
     mapping(uint256 => Service) private _serviceRegistry;
 
@@ -88,11 +88,10 @@ contract FulfillableRegistry is UUPSUpgradeable, OwnableUpgradeable {
      * 
      * @param serviceId the service identifier
      * @param ref the reference to the service
-     * @return true if the reference was added
      */
-    function addServiceRef(uint256 serviceId, string memory ref) external onlyOwner returns (bool) {
+    function addServiceRef(uint256 serviceId, string memory ref) external returns (string[] memory) {
         _serviceRefs[serviceId].push(ref);
-        return true;
+        return _serviceRefs[serviceId];
     }
 
     /**

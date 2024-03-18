@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
+const eth = require('ethers');
 
 describe('TukyFulfillmentManagerV1', () => {
     let owner;
@@ -90,5 +91,10 @@ describe('TukyFulfillmentManagerV1', () => {
         });
 
         // Add more test cases for different scenarios
+        it('should add a service ref', async () => {
+            const serviceID = 1;
+            const serviceRef = "012345678912";
+            const result = await manager.setServiceRef(serviceID, serviceRef);
+        });
     });
 });

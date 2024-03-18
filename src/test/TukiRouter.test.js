@@ -29,6 +29,7 @@ let regexValidator;
 let v2;
 let registry;
 let manager;
+let validRef = uuid.v4();
 
 describe("TukyRouterV1", function () {
 
@@ -74,6 +75,7 @@ describe("TukyRouterV1", function () {
       await fulfiller.getAddress(),
       await routerContract.getAddress()
     );
+    manager.setServiceRef(1, validRef);
   });
 
   describe("Upgradeability", async () => {
@@ -178,7 +180,6 @@ describe("TukyRouterV1", function () {
 
     it("should fail with invalid Ref", async () => {
       const invalidRef = "1234567890";
-      const validRef = uuid.v4();
       const invalidRequest = DUMMY_VALID_FULFILLMENTREQUEST;
       invalidRequest.serviceRef = invalidRef;
       await expect(
@@ -189,6 +190,7 @@ describe("TukyRouterV1", function () {
     it("should route to service escrow", async () => {
       const service = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
+      DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
       const feeAmount = new BN(service.feeAmount.toString());
       const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
       const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });
