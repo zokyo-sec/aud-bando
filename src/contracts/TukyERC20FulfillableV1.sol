@@ -7,6 +7,7 @@ pragma solidity >=0.8.20 <0.9.0;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ITukyERC20Fulfillable.sol";
 
 /**
@@ -25,6 +26,7 @@ import "./ITukyERC20Fulfillable.sol";
 contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
     using Address for address;
     using Math for uint256;
+    using SafeERC20 for IERC20;
 
     /**********************/
     /* EVENT DECLARATIONS */
@@ -152,17 +154,13 @@ contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
         uint256 amount = fulfillmentRequest.tokenAmount;
         address token = fulfillmentRequest.token;
         // check for deposits on that token
-
         (bool success, uint256 result) = amount.tryAdd(_deposits[token][fulfillmentRequest.payer]);
         require(success, "Overflow while adding deposits");
         // transfer the ERC20 token to this contract
-        require(
-            IERC20(fulfillmentRequest.token).transferFrom(
-                fulfillmentRequest.payer,
-                address(this),
-                amount
-            ),
-            "ERC20 Transfer failed"
+        IERC20(fulfillmentRequest.token).safeTransferFrom(
+            fulfillmentRequest.payer,
+            address(this),
+            amount
         );
         _deposits[token][fulfillmentRequest.payer] = result;
         // create a FulfillmentRecord
@@ -228,10 +226,7 @@ contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
     * @param refundee The address to send the value to.
     */
     function _withdrawRefund(address token, address refundee, uint256 amount) internal {
-        require(
-            IERC20(token).transfer(refundee, amount),
-            "ERC20 Transfer failed"
-        );
+        IERC20(token).safeTransfer(refundee, amount);
         emit RefundWithdrawn(token, refundee, amount);
     }
 
@@ -317,9 +312,6 @@ contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
         require(_manager == msg.sender, "Caller is not the manager");
         require(_releaseablePools[token] > 0, "There is no balance to release.");
         _releaseablePools[token] = 0;
-        require(
-            IERC20(token).transfer(_beneficiary, _releaseablePools[token]),
-            "ERC20 Transfer failed"
-        );
+        IERC20(token).safeTransfer(_beneficiary, _releaseablePools[token]);
     }
 }
