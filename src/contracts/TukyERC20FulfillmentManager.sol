@@ -4,8 +4,8 @@ pragma solidity >=0.8.20 <0.9.0;
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './periphery/registry/IFulfillableRegistry.sol';
-import './ITukyFulfillable.sol';
-import './TukyFulfillableV1.sol';
+import './ITukyERC20Fulfillable.sol';
+import './TukyERC20FulfillableV1.sol';
 import './FulfillmentTypes.sol';
 
 /**
@@ -34,7 +34,7 @@ import './FulfillmentTypes.sol';
  * and withdraw a refund.
  * 
  */
-contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
+contract TukyERC20FulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     address private _serviceRegistry;
 
@@ -61,10 +61,9 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      * identifier. eg. phone number, bill number, etc.
      * @return address[2]
      */
-    function setService(
+    function enableERC20Service(
         uint256 serviceID,
         address payable beneficiaryAddress,
-        uint256 feeAmount,
         address fulfiller,
         address router
     ) 
@@ -74,30 +73,9 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         returns (address)
     {
         require(serviceID > 0, "Service ID is invalid");
-        TukyFulfillableV1 _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
-        _escrow.setFee(feeAmount);
-        IFulfillableRegistry(_serviceRegistry).addService(serviceID, Service({
-            serviceId: serviceID,
-            contractAddress: address(_escrow),
-            erc20ContractAddress: address(0),
-            fulfiller: fulfiller,
-            feeAmount: feeAmount
-        }));
-        emit ServiceAdded(serviceID, address(_escrow), fulfiller);
+        TukyERC20FulfillableV1 _escrow = new TukyERC20FulfillableV1(beneficiaryAddress, serviceID, router, fulfiller);
+        IFulfillableRegistry(_serviceRegistry).enableERC20(serviceID, address(_escrow));
         return address(_escrow);
-    }
-
-    /**
-     * setServiceRef
-     * 
-     * This method must only be called by the owner.
-     * It sets up a service reference for a service.
-     * @param serviceID uint256 service identifier
-     * @param serviceRef string service reference
-     * @return bool
-     */
-    function setServiceRef(uint256 serviceID, string memory serviceRef) public virtual onlyOwner returns (string[] memory) {
-        return IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
     }
 
     /**
@@ -106,12 +84,12 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      * @param serviceID uint256 service identifier
      * @param refundee address payable address of the refund recipient
      */
-    function withdrawRefund(uint256 serviceID, address payable refundee) public virtual {
+    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        require(ITukyFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
+        require(ITukyERC20Fulfillable(service.erc20ContractAddress).withdrawERC20Refund(token, refundee), "Withdrawal failed");
     }
 
     /**
@@ -126,6 +104,6 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        ITukyFulfillable(service.contractAddress).registerFulfillment(fulfillment);
+        ITukyERC20Fulfillable(service.erc20ContractAddress).registerFulfillment(fulfillment);
     }
 }

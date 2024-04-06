@@ -110,4 +110,14 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
         }
         return false;
     }
+
+    /**
+     * enableERC20
+     * 
+     * @param serviceId the service identifier
+     * @param erc20ContractAddress the address of the erc20 fulfillable contract
+     */
+    function enableERC20(uint256 serviceId, address erc20ContractAddress) external onlyOwner {
+        _serviceRegistry[serviceId].erc20ContractAddress = erc20ContractAddress;
+    }
 }
