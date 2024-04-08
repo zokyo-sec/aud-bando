@@ -1,6 +1,7 @@
 const { ethers, upgrades } = require('hardhat');
 const { expect, assert } = require('chai');
 const BN = require('bn.js')
+const uuid = require('uuid');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
@@ -28,6 +29,7 @@ let regexValidator;
 let v2;
 let registry;
 let manager;
+let validRef = uuid.v4();
 
 describe("TukyRouterV1", function () {
 
@@ -49,12 +51,6 @@ describe("TukyRouterV1", function () {
     await routerContract.waitForDeployment();
     v1 = TukyRouterV1.attach(await routerContract.getAddress());
     /**
-     * deploy validator
-     */
-    const Validator = await ethers.deployContract('TwelveDigitsValidator');
-    await Validator.waitForDeployment()
-    regexValidator = Validator.attach(await Validator.getAddress())
-    /**
      * deploy manager
      */
     const Manager = await ethers.getContractFactory('TukyFulfillmentManagerV1');
@@ -68,11 +64,11 @@ describe("TukyRouterV1", function () {
     manager.setService(
       1,
       await beneficiary.getAddress(),
-      await Validator.getAddress(),
       feeAmount,
       await fulfiller.getAddress(),
       await routerContract.getAddress()
     );
+    manager.setServiceRef(1, validRef);
   });
 
   describe("Upgradeability", async () => {
@@ -163,12 +159,6 @@ describe("TukyRouterV1", function () {
         ).to.be.revertedWith('Amount must be greater than zero');
     });
 
-    it("should fail when the validator doesnt match", async () => {
-      await expect(
-        v2.requestService(1, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")})
-      ).to.be.revertedWith('The service identifier failed to validate');
-    });
-
     it("should fail with insufficient funds error", async () => {
         const service = await registry.getService(1);
         const feeAmount = new BN(service.feeAmount.toString());
@@ -181,9 +171,19 @@ describe("TukyRouterV1", function () {
         };
     });
 
+    it("should fail with invalid Ref", async () => {
+      const invalidRef = "1234567890";
+      const invalidRequest = DUMMY_VALID_FULFILLMENTREQUEST;
+      invalidRequest.serviceRef = invalidRef;
+      await expect(
+        v2.requestService(1, invalidRequest, { value: ethers.parseUnits("1", "ether") })
+      ).to.be.revertedWith('ref not in registry');
+    });
+
     it("should route to service escrow", async () => {
       const service = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
+      DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
       const feeAmount = new BN(service.feeAmount.toString());
       const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
       const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });

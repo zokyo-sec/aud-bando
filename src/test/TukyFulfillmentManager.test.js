@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
+const eth = require('ethers');
 
 describe('TukyFulfillmentManagerV1', () => {
     let owner;
@@ -35,7 +36,6 @@ describe('TukyFulfillmentManagerV1', () => {
             const result = await manager.setService(
                 serviceID,
                 beneficiary.address,
-                validator.address,
                 feeAmount,
                 fulfiller.address,
                 router.address
@@ -48,7 +48,6 @@ describe('TukyFulfillmentManagerV1', () => {
             expect(service.serviceId).to.equal(serviceID);
             expect(service.contractAddress).to.be.a.properAddress;
             expect(service.fulfiller).to.equal(fulfiller.address);
-            expect(service.validator).to.equal(validator.address);
             expect(service.feeAmount).to.equal(feeAmount);
 
             // Verify the ServiceAdded event
@@ -64,7 +63,6 @@ describe('TukyFulfillmentManagerV1', () => {
                 manager.setService(
                     serviceID,
                     beneficiary.address,
-                    validator.address,
                     feeAmount,
                     fulfiller.address,
                     router.address
@@ -81,7 +79,6 @@ describe('TukyFulfillmentManagerV1', () => {
                 manager.setService(
                     serviceID,
                     beneficiary.address,
-                    DUMMY_ADDRESS,
                     feeAmount,
                     fulfiller.address,
                     router.address
@@ -90,5 +87,10 @@ describe('TukyFulfillmentManagerV1', () => {
         });
 
         // Add more test cases for different scenarios
+        it('should add a service ref', async () => {
+            const serviceID = 1;
+            const serviceRef = "012345678912";
+            const result = await manager.setServiceRef(serviceID, serviceRef);
+        });
     });
 });

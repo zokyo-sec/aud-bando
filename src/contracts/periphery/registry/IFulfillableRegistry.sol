@@ -20,7 +20,6 @@ struct Service {
     address contractAddress;
     address erc20ContractAddress;
     address fulfiller;
-    address validator;
     uint256 feeAmount;
 }
 
@@ -37,5 +36,11 @@ interface IFulfillableRegistry {
     function getService(uint256 serviceId) external view returns (Service memory);
 
     function removeServiceAddress(uint256 serviceId) external;
+
+    function addServiceRef(uint256 serviceId, string memory serviceRef) external returns (string[] memory);
+
+    function isRefValid(uint256 serviceId, string memory serviceRef) external view returns (bool);
+
+    function enableERC20(uint256 serviceId, address erc20ContractAddress) external;
 
 }
