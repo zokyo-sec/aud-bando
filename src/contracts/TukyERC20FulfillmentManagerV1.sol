@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.20 <0.9.0;
 
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 import './periphery/registry/IFulfillableRegistry.sol';
 import './ITukyERC20Fulfillable.sol';
 import './TukyERC20FulfillableV1.sol';
@@ -34,21 +33,15 @@ import './FulfillmentTypes.sol';
  * and withdraw a refund.
  * 
  */
-contract TukyERC20FulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
+contract TukyERC20FulfillmentManagerV1 is Ownable {
 
     address private _serviceRegistry;
 
     event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
-    function initialize(address serviceRegistry) public virtual initializer {
-        __Ownable_init(msg.sender);
-        __UUPSUpgradeable_init();
+    constructor(address serviceRegistry) Ownable(msg.sender) {
         _serviceRegistry = serviceRegistry;
     }
-
-    // UUPS upgrade authorization
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
 
     /**
      * @dev setService
