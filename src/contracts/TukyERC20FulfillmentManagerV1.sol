@@ -102,7 +102,7 @@ contract TukyERC20FulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
+            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
         }
         ITukyERC20Fulfillable(service.erc20ContractAddress).registerFulfillment(fulfillment);
     }
