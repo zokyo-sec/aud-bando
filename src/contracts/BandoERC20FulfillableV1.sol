@@ -8,10 +8,10 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./ITukyERC20Fulfillable.sol";
+import "./IBandoERC20Fulfillable.sol";
 
 /**
- * @title TukyERC20FulfillableV1
+ * @title BandoERC20FulfillableV1
  * @dev Base escrow contract, holds funds designated for a beneficiary until they
  * withdraw them or a refund is emitted.
  *
@@ -23,7 +23,7 @@ import "./ITukyERC20Fulfillable.sol";
  * payment method should be its owner, and provide public methods redirecting
  * to the escrow's deposit and withdraw.
  */
-contract TukyERC20FulfillableV1 is ITukyERC20Fulfillable {
+contract BandoERC20FulfillableV1 is IBandoERC20Fulfillable {
     using Address for address;
     using Math for uint256;
     using SafeERC20 for IERC20;

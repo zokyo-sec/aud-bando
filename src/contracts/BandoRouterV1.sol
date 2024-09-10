@@ -6,13 +6,13 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./ITukyFulfillable.sol";
+import "./IBandoFulfillable.sol";
 import "./periphery/registry/IFulfillableRegistry.sol";
 import "./FulfillmentTypes.sol";
 
 
 /**
- * ----- TukyRouter -----
+ * ----- BandoRouter -----
  * This Smart Contract is intented to be user-facing.
  * Any valid address can request a fulfillment to a valid fulfillable.
  * 
@@ -20,7 +20,7 @@ import "./FulfillmentTypes.sol";
  * -----------------------
  */
 
-contract TukyRouterV1 is 
+contract BandoRouterV1 is 
     OwnableUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable {
@@ -89,7 +89,7 @@ contract TukyRouterV1 is
         (bool success, uint256 total_amount) = request.weiAmount.tryAdd(service.feeAmount);
         require(success, "Overflow while adding fee and amount");
         require(msg.value == total_amount, "Transaction total does not match fee + amount.");
-        ITukyFulfillable(service.contractAddress).deposit{value: msg.value}(request);
+        IBandoFulfillable(service.contractAddress).deposit{value: msg.value}(request);
         emit ServiceRequested(serviceID, request);
         return true;
     }

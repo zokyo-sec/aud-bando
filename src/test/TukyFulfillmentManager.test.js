@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 const eth = require('ethers');
 
-describe('TukyFulfillmentManagerV1', () => {
+describe('BandoFulfillmentManagerV1', () => {
     let owner;
     let validator;
     let fulfiller;
@@ -20,11 +20,11 @@ describe('TukyFulfillmentManagerV1', () => {
         await serviceRegistry.waitForDeployment();
         const registryAddress = await serviceRegistry.getAddress();
         registry = await ServiceRegistry.attach(registryAddress);
-        // Deploy the TukyFulfillmentManagerV1 contract
-        const TukyFulfillmentManager = await ethers.getContractFactory('TukyFulfillmentManagerV1');
-        const tukyFulfillmentManager = await upgrades.deployProxy(TukyFulfillmentManager, [registryAddress]);
-        await tukyFulfillmentManager.waitForDeployment();
-        manager = await TukyFulfillmentManager.attach(await tukyFulfillmentManager.getAddress());
+        // Deploy the BandoFulfillmentManagerV1 contract
+        const BandoFulfillmentManager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
+        const bandoFulfillmentManager = await upgrades.deployProxy(BandoFulfillmentManager, [registryAddress]);
+        await bandoFulfillmentManager.waitForDeployment();
+        manager = await BandoFulfillmentManager.attach(await bandoFulfillmentManager.getAddress());
     });
 
     describe('setService', () => {

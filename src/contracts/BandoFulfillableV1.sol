@@ -6,10 +6,10 @@ pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./ITukyFulfillable.sol";
+import "./IBandoFulfillable.sol";
 
 /**
- * @title TukyFulfillableV1
+ * @title BandoFulfillableV1
  * @dev Base escrow contract, holds funds designated for a beneficiary until they
  * withdraw them or a refund is emitted.
  *
@@ -21,7 +21,7 @@ import "./ITukyFulfillable.sol";
  * payment method should be its owner, and provide public methods redirecting
  * to the escrow's deposit and withdraw.
  */
-contract TukyFulfillableV1 is ITukyFulfillable {
+contract BandoFulfillableV1 is IBandoFulfillable {
     using Address for address payable;
     using Math for uint256;
 

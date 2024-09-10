@@ -1,5 +1,5 @@
 {
-  "name": "tuky-fulfillment-protocol",
+  "name": "bando-fulfillment-protocol",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.3",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",

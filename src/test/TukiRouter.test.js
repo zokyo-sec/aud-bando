@@ -31,7 +31,7 @@ let registry;
 let manager;
 let validRef = uuid.v4();
 
-describe("TukyRouterV1", function () {
+describe("BandoRouterV1", function () {
 
   before(async () => {
     [owner, beneficiary, fulfiller] = await ethers.getSigners();
@@ -46,14 +46,14 @@ describe("TukyRouterV1", function () {
     /**
      * deploy router
      */
-    const TukyRouterV1 = await ethers.getContractFactory('TukyRouterV1');
-    routerContract = await upgrades.deployProxy(TukyRouterV1, [registryAddress]);
+    const BandoRouterV1 = await ethers.getContractFactory('BandoRouterV1');
+    routerContract = await upgrades.deployProxy(BandoRouterV1, [registryAddress]);
     await routerContract.waitForDeployment();
-    v1 = TukyRouterV1.attach(await routerContract.getAddress());
+    v1 = BandoRouterV1.attach(await routerContract.getAddress());
     /**
      * deploy manager
      */
-    const Manager = await ethers.getContractFactory('TukyFulfillmentManagerV1');
+    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
     const m = await upgrades.deployProxy(Manager, [registryAddress]);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());

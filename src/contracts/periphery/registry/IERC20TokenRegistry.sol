@@ -3,7 +3,7 @@ pragma solidity >=0.8.20 <0.9.0;
 
 /**
  * @title IERC20TokenRegistry
- * @author Tuky
+ * @author Bando
  * @notice Interface for ERC20 token registry
  * @dev This contract is used to whitelist ERC20 tokens
  */

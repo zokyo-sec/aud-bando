@@ -41,13 +41,13 @@ let fulfiller;
 let router;
 let erc20Test;
 
-describe("TukiERC20FulfillableV1", () => {
+describe("BandoERC20FulfillableV1", () => {
   
   before(async () => {
     [owner, beneficiary, fulfiller, router] = await ethers.getSigners();
     erc20Test = await ethers.deployContract('DemoToken');
     await erc20Test.waitForDeployment();
-    fulfillerContract = await ethers.deployContract('TukyERC20FulfillableV1', [
+    fulfillerContract = await ethers.deployContract('BandoERC20FulfillableV1', [
       beneficiary, 1, router, fulfiller
     ]);
     await erc20Test.approve(await fulfillerContract.getAddress(), ethers.parseUnits('1000000', 18));

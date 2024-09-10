@@ -4,14 +4,14 @@ pragma solidity >=0.8.20 <0.9.0;
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './periphery/registry/IFulfillableRegistry.sol';
-import './ITukyFulfillable.sol';
-import './TukyFulfillableV1.sol';
+import './IBandoFulfillable.sol';
+import './BandoFulfillableV1.sol';
 import './FulfillmentTypes.sol';
 
 /**
- * @title TukyFulfillmentManager
+ * @title BandoFulfillmentManager
  * 
- * This contract manages services and fulfillables for the Tuky protocol.
+ * This contract manages services and fulfillables for the Bando protocol.
  * It inherits from OwnableUpgradeable and UUPSUpgradeable contracts.
  * 
  * OwnableUpgradeable provides basic access control functionality, 
@@ -22,7 +22,7 @@ import './FulfillmentTypes.sol';
  * contract's implementation logic.
  * 
  * The purpose pf this contract is to interact with the FulfillableRegistry
- * and the TukyFulfillable contracts to perform the following actions:
+ * and the BandoFulfillable contracts to perform the following actions:
  * 
  * - Set up a service escrow address and validator address.
  * - Register a fulfillment result for a service.
@@ -34,7 +34,7 @@ import './FulfillmentTypes.sol';
  * and withdraw a refund.
  * 
  */
-contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
+contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     address private _serviceRegistry;
 
@@ -55,7 +55,7 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      * This method must only be called by an owner.
      * It sets up a service escrow address and validator address.
      * 
-     * The escrow is intended to be a valid Tuky escrow contract
+     * The escrow is intended to be a valid Bando escrow contract
      * 
      * The validator address is intended to be a contract that validates the service's
      * identifier. eg. phone number, bill number, etc.
@@ -74,7 +74,7 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         returns (address)
     {
         require(serviceID > 0, "Service ID is invalid");
-        TukyFulfillableV1 _escrow = new TukyFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
+        BandoFulfillableV1 _escrow = new BandoFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
         _escrow.setFee(feeAmount);
         IFulfillableRegistry(_serviceRegistry).addService(serviceID, Service({
             serviceId: serviceID,
@@ -111,7 +111,7 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        require(ITukyFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
+        require(IBandoFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
     }
 
     /**
@@ -126,6 +126,6 @@ contract TukyFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        ITukyFulfillable(service.contractAddress).registerFulfillment(fulfillment);
+        IBandoFulfillable(service.contractAddress).registerFulfillment(fulfillment);
     }
 }

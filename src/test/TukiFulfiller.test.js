@@ -42,11 +42,11 @@ let beneficiary;
 let fulfiller;
 let router;
 
-describe("TukiFulfillableV1", () => {
+describe("BandoFulfillableV1", () => {
   
   before(async () => {
     [owner, beneficiary, fulfiller, router] = await ethers.getSigners();
-    fulfillerContract = await ethers.deployContract('TukyFulfillableV1', [
+    fulfillerContract = await ethers.deployContract('BandoFulfillableV1', [
       beneficiary, 1, ethers.parseUnits('1', 'wei'), router, fulfiller
     ]);
     await fulfillerContract.waitForDeployment();
