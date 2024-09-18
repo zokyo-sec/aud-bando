@@ -1,0 +1,240 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IBandoFulfillable",
+  "sourceName": "contracts/IBandoFulfillable.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "payer",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "weiAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fiatAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "serviceRef",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct FulFillmentRequest",
+          "name": "request",
+          "type": "tuple"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "fulfiller",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "record",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "serviceRef",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "fulfiller",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "externalID",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "payer",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "weiAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "feeAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fiatAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "entryTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "receiptURI",
+              "type": "string"
+            },
+            {
+              "internalType": "enum FulFillmentResultState",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct FulFillmentRecord",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "payer",
+          "type": "address"
+        }
+      ],
+      "name": "recordsOf",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "externalID",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "receiptURI",
+              "type": "string"
+            },
+            {
+              "internalType": "enum FulFillmentResultState",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct FulFillmentResult",
+          "name": "fulfillment",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerFulfillment",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "serviceID",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "setFee",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "refundee",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawRefund",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
