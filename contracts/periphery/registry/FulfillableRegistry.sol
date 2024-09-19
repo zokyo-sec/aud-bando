@@ -5,17 +5,10 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import './IFulfillableRegistry.sol';
 
-/**
- * @title FulfillableRegistry
- * @author g6s
- * @notice This contract is intented to be used as a registry for fulfillable services.
- * It will store the address of the contract that implements the fulfillable service.
- * The address can be retrieved by the serviceId.
- * @dev This contract is upgradeable.
- * @dev This contract is Ownable.
- * @dev This contract uses UUPSUpgradeable.
- * 
- */
+/// @title FulfillableRegistry
+/// @author g6s
+/// @notice A registry for fulfillable services
+/// @dev This contract is upgradeable, Ownable, and uses UUPSUpgradeable
 contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
 
     mapping(uint256 => Service) private _serviceRegistry;

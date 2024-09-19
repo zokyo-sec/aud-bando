@@ -1,0 +1,8 @@
+{
+  "name": "create3-proxy",
+  "version": "1.0.0",
+  "description": "Create3 Factory with Upgradeable Proxy Support",
+  "main": "index.js",
+  "author": "g6s",
+  "license": "MIT"
+}
