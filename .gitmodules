@@ -13,3 +13,6 @@
 [submodule "create3-proxy/lib/solmate"]
 	path = create3-proxy/lib/solmate
 	url = https://github.com/transmissions11/solmate
+[submodule "create3-proxy/lib/openzeppelin-contracts"]
+	path = create3-proxy/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
