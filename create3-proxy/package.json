@@ -4,5 +4,8 @@
   "description": "Create3 Factory with Upgradeable Proxy Support",
   "main": "index.js",
   "author": "g6s",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "solmate": "^6.2.0"
+  }
 }

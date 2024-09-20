@@ -1,22 +1,27 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
+import "solmate/src/utils/CREATE3.sol";
 
-contract Create3ERC1967 {
-    // Event emitted when a new proxy is deployed
-    event ProxyDeployed(address indexed proxy, bytes32 salt);
+/// @title Create3ERC1967
+/// @author g6s
+/// @notice A library for deploying ERC1967 proxies using the CREATE3 pattern
+library Create3ERC1967 {
 
-    // Deploys an ERC1967 proxy using Create3 pattern
-    function deployProxy(
-        address create3_factory,
+    /// @notice Deploys an ERC1967 proxy using the CREATE3 pattern
+    /// @param salt A unique value to determine the contract's address
+    /// @param creationCode The bytecode of the implementation contract
+    /// @param initializerData The data to be passed to the initializer function
+    /// @return proxy The address of the deployed proxy contract
+    function deploy(
         bytes32 salt,
         bytes memory creationCode,
         bytes memory initializerData
-    ) public returns (address) {
+    ) public returns (address proxy) {
         //deploy the implementation
-        address implementation = _deployImplementation(create3_factory, salt, creationCode);
+        address implementation = _deployImplementation(salt, creationCode);
 
         // Generate the initialization code for the ERC1967Proxy
         bytes memory initCode = abi.encodePacked(
@@ -24,25 +29,15 @@ contract Create3ERC1967 {
             abi.encode(implementation, initializerData)
         );
 
-        address proxy = ICREATE3Factory(create3_factory).deploy(salt, initCode);
-
-        emit ProxyDeployed(proxy, salt);
-        return proxy;
+        proxy = CREATE3.deploy(salt, initCode, 0);
     }
 
-    function _deployImplementation(address create3_factory, bytes32 salt, bytes memory creationCode) internal returns (address) {
-        return ICREATE3Factory(create3_factory).deploy(salt, creationCode);
-    }
-
-    // Computes the address where a proxy would be deployed
-    function computeProxyAddress(bytes32 salt) public view returns (address) {
-        return Create2.computeAddress(
-            salt,
-            keccak256(abi.encodePacked(
-                type(ERC1967Proxy).creationCode,
-                abi.encode(address(0), "") // Dummy values, as they don't affect the address computation
-            )),
-            address(this)
-        );
+    /// @notice Deploys the implementation contract using CREATE3
+    /// @dev This is an internal function used by deployProxy
+    /// @param salt A unique value to determine the contract's address
+    /// @param creationCode The bytecode of the implementation contract
+    /// @return impl The address of the deployed implementation contract
+    function _deployImplementation(bytes32 salt, bytes memory creationCode) internal returns (address impl) {
+        impl = CREATE3.deploy(salt, creationCode, 0);
     }
 }
