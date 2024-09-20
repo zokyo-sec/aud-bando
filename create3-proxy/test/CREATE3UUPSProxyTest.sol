@@ -2,16 +2,17 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/Create3ERC1967.sol";
+import "solmate/src/utils/CREATE3.sol";
+import "../src/CREATE3UUPSProxy.sol";
 import "./TestImplementation.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-contract Create3ERC1967Test is Test {
+contract CREATE3UUPSProxyTest is Test {
     function testDeployImplementation() public {
         bytes32 salt = keccak256("test_implementation");
         bytes memory creationCode = type(TestImplementation).creationCode;
 
-        address impl = Create3ERC1967._deployImplementation(salt, creationCode);
+        address impl = CREATE3UUPSProxy._deployImplementation(salt, creationCode);
 
         assertTrue(impl != address(0), "Implementation should be deployed");
         assertTrue(impl.code.length > 0, "Implementation should have code");
@@ -23,13 +24,17 @@ contract Create3ERC1967Test is Test {
         uint256 initialValue = 42;
         bytes memory initializerData = abi.encodeWithSignature("initialize(uint256)", initialValue);
 
-        address proxy = Create3ERC1967.deploy(salt, creationCode, initializerData);
+        try CREATE3UUPSProxy.deploy(salt, creationCode, initializerData) returns (address proxy) {
+            assertTrue(proxy != address(0), "Proxy should be deployed");
+            assertTrue(proxy.code.length > 0, "Proxy should have code");
 
-        assertTrue(proxy != address(0), "Proxy should be deployed");
-        assertTrue(proxy.code.length > 0, "Proxy should have code");
-
-        TestImplementation impl = TestImplementation(proxy);
-        assertEq(impl.value(), initialValue, "Proxy should be initialized with correct value");
+            TestImplementation impl = TestImplementation(proxy);
+            assertEq(impl.value(), initialValue, "Proxy should be initialized with correct value");
+        } catch Error(string memory reason) {
+            fail(string(abi.encodePacked("Deployment failed: ", reason)));
+        } catch (bytes memory lowLevelData) {
+            fail(string(abi.encodePacked("Deployment failed with raw error: ", vm.toString(lowLevelData))));
+        }
     }
 
     function testProxyFunctionality() public {
@@ -38,7 +43,7 @@ contract Create3ERC1967Test is Test {
         uint256 initialValue = 42;
         bytes memory initializerData = abi.encodeWithSignature("initialize(uint256)", initialValue);
 
-        address proxy = Create3ERC1967.deploy(salt, creationCode, initializerData);
+        address proxy = CREATE3UUPSProxy.deploy(salt, creationCode, initializerData);
         TestImplementation impl = TestImplementation(proxy);
 
         uint256 newValue = 100;
@@ -50,14 +55,9 @@ contract Create3ERC1967Test is Test {
         bytes32 salt = keccak256("test_deterministic");
         bytes memory creationCode = type(TestImplementation).creationCode;
         bytes memory initializerData = abi.encodeWithSignature("initialize(uint256)", 42);
-
-        address proxy1 = Create3ERC1967.deploy(salt, creationCode, initializerData);
-        
-        vm.roll(block.number + 1);  // Move to next block
-        
-        address proxy2 = Create3ERC1967.deploy(salt, creationCode, initializerData);
-
-        assertEq(proxy1, proxy2, "Proxies should have the same address");
+        address predictedProxy1 = CREATE3.getDeployed(salt);
+        address proxy1 = CREATE3UUPSProxy.deploy(salt, creationCode, initializerData);
+        assertEq(proxy1, predictedProxy1, "Proxy should have deterministic address");
     }
 
     function testRevertOnRedeployment() public {
@@ -65,9 +65,9 @@ contract Create3ERC1967Test is Test {
         bytes memory creationCode = type(TestImplementation).creationCode;
         bytes memory initializerData = abi.encodeWithSignature("initialize(uint256)", 42);
 
-        Create3ERC1967.deploy(salt, creationCode, initializerData);
+        CREATE3UUPSProxy.deploy(salt, creationCode, initializerData);
 
         vm.expectRevert();
-        Create3ERC1967.deploy(salt, creationCode, initializerData);
+        CREATE3UUPSProxy.deploy(salt, creationCode, initializerData);
     }
 }
