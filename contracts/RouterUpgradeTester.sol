@@ -7,8 +7,6 @@ import "./BandoRouterV1.sol";
  * Test upgrade on router
  */
 contract RouterUpgradeTester is BandoRouterV1 {
-    using Address for address payable;
-    using Math for uint256;
 
     function isUpgrade() public view onlyOwner returns (bool) {
         return true;
