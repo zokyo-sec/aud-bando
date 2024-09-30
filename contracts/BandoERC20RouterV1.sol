@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "./IBandoERC20Fulfillable.sol";
 import "./periphery/registry/IFulfillableRegistry.sol";
 import "./FulfillmentTypes.sol";
@@ -23,7 +24,8 @@ import "./FulfillmentTypes.sol";
 contract BandoERC20RouterV1 is 
     OwnableUpgradeable,
     PausableUpgradeable,
-    UUPSUpgradeable {
+    UUPSUpgradeable,
+    ReentrancyGuardUpgradeable {
 
     using Address for address payable;
     using Math for uint256;
@@ -41,6 +43,7 @@ contract BandoERC20RouterV1 is
         __Ownable_init(msg.sender);
         __Pausable_init();
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         _fulfillableRegistry = serviceRegistry;
         _tokenRegistry = tokenRegistry;
     }

@@ -156,7 +156,7 @@ describe("BandoRouterV1", function () {
     it("should fail for when amount is zero.", async () => {
         await expect(
           v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, {value: 0})
-        ).to.be.revertedWith('Amount must be greater than zero');
+        ).to.be.revertedWithCustomError(v2, 'InsufficientAmount');
     });
 
     it("should fail with insufficient funds error", async () => {
@@ -177,7 +177,7 @@ describe("BandoRouterV1", function () {
       invalidRequest.serviceRef = invalidRef;
       await expect(
         v2.requestService(1, invalidRequest, { value: ethers.parseUnits("1", "ether") })
-      ).to.be.revertedWith('ref not in registry');
+      ).to.be.revertedWithCustomError(v2, 'InvalidRef');
     });
 
     it("should route to service escrow", async () => {

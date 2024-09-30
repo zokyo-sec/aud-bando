@@ -113,3 +113,7 @@ dist
 
 artifacts
 cache
+
+#foundry
+out
+cache**
