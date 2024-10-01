@@ -3,13 +3,14 @@ pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "./IBandoERC20Fulfillable.sol";
 import "./periphery/registry/IFulfillableRegistry.sol";
 import "./FulfillmentTypes.sol";
+import "./libraries/FulfillmentRequestLib.sol";
 
 
 /**
@@ -20,7 +21,6 @@ import "./FulfillmentTypes.sol";
  * The contract will validate the request and transfer the payment to the fulfillable contract.
  * -----------------------
  */
-
 contract BandoERC20RouterV1 is 
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -82,18 +82,9 @@ contract BandoERC20RouterV1 is
      * - payment due is transferred to escrow contract until fulfillment
      */
     function requestService(
-        uint256 serviceID, ERC20FulFillmentRequest memory request) public payable whenNotPaused returns (bool)
+        uint256 serviceID, ERC20FulFillmentRequest memory request) public payable whenNotPaused nonReentrant returns (bool)
     {
-        require(request.tokenAmount > 0, "Amount must be greater than zero");
-        require(request.fiatAmount > 0, "Fiat amount is invalid");
-        Service memory service = IFulfillableRegistry(_fulfillableRegistry).getService(serviceID);
-        require(
-            IFulfillableRegistry(_fulfillableRegistry).isRefValid(serviceID, request.serviceRef),
-            "ref not in registry"
-        );
-        (bool success, uint256 total_amount) = request.tokenAmount.tryAdd(service.feeAmount);
-        require(success, "Overflow while adding fee and amount");
-        require(msg.value == total_amount, "Transaction total does not match fee + amount.");
+        Service memory service = FulfillmentRequestLib.validateRequest(serviceID, request, _fulfillableRegistry);
         IBandoERC20Fulfillable(service.erc20ContractAddress).depositERC20(request);
         emit ServiceRequested(serviceID, request);
         return true;
