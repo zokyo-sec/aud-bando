@@ -37,13 +37,15 @@ import './FulfillmentTypes.sol';
 contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     address private _serviceRegistry;
+    address private _escrow;
 
     event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
-    function initialize(address serviceRegistry) public virtual initializer {
+    function initialize(address serviceRegistry, address escrow) public virtual initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         _serviceRegistry = serviceRegistry;
+        _escrow = escrow;
     }
 
     // UUPS upgrade authorization
@@ -63,28 +65,26 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      */
     function setService(
         uint256 serviceID,
-        address payable beneficiaryAddress,
         uint256 feeAmount,
         address fulfiller,
-        address router
+        address payable beneficiary
     ) 
-        public 
+        public
         virtual
         onlyOwner 
-        returns (address)
+        returns (Service memory)
     {
         require(serviceID > 0, "Service ID is invalid");
-        BandoFulfillableV1 _escrow = new BandoFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
-        _escrow.setFee(feeAmount);
-        IFulfillableRegistry(_serviceRegistry).addService(serviceID, Service({
+        Service memory service = Service({
             serviceId: serviceID,
-            contractAddress: address(_escrow),
-            erc20ContractAddress: address(0),
             fulfiller: fulfiller,
-            feeAmount: feeAmount
-        }));
+            feeAmount: feeAmount,
+            releaseablePool: 0,
+            beneficiary: beneficiary
+        });
+        IFulfillableRegistry(_serviceRegistry).addService(serviceID, service);
         emit ServiceAdded(serviceID, address(_escrow), fulfiller);
-        return address(_escrow);
+        return service;
     }
 
     /**
@@ -111,7 +111,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        require(IBandoFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
+        require(IBandoFulfillable(_escrow).withdrawRefund(serviceID, refundee), "Withdrawal failed");
     }
 
     /**
@@ -126,6 +126,6 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        IBandoFulfillable(service.contractAddress).registerFulfillment(fulfillment);
+        IBandoFulfillable(_escrow).registerFulfillment(serviceID, fulfillment);
     }
 }

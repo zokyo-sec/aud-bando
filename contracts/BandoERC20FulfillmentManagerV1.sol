@@ -37,38 +37,13 @@ contract BandoERC20FulfillmentManagerV1 is Ownable {
 
     address private _serviceRegistry;
 
+    address private _escrow;
+
     event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
-    constructor(address serviceRegistry) Ownable(msg.sender) {
+    constructor(address serviceRegistry, address escrow) Ownable(msg.sender) {
         _serviceRegistry = serviceRegistry;
-    }
-
-    /**
-     * @dev setService
-     * This method must only be called by an owner.
-     * It sets up a service escrow address and validator address.
-     * 
-     * The escrow is intended to be a valid Bando escrow contract
-     * 
-     * The validator address is intended to be a contract that validates the service's
-     * identifier. eg. phone number, bill number, etc.
-     * @return address[2]
-     */
-    function enableERC20Service(
-        uint256 serviceID,
-        address payable beneficiaryAddress,
-        address fulfiller,
-        address router
-    ) 
-        public 
-        virtual
-        onlyOwner 
-        returns (address)
-    {
-        require(serviceID > 0, "Service ID is invalid");
-        BandoERC20FulfillableV1 _escrow = new BandoERC20FulfillableV1(beneficiaryAddress, serviceID, router, fulfiller);
-        IFulfillableRegistry(_serviceRegistry).enableERC20(serviceID, address(_escrow));
-        return address(_escrow);
+        _escrow = escrow;
     }
 
     /**
@@ -82,7 +57,7 @@ contract BandoERC20FulfillmentManagerV1 is Ownable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        require(IBandoERC20Fulfillable(service.erc20ContractAddress).withdrawERC20Refund(token, refundee), "Withdrawal failed");
+        require(IBandoERC20Fulfillable(_escrow).withdrawERC20Refund(token, refundee), "Withdrawal failed");
     }
 
     /**
@@ -97,6 +72,6 @@ contract BandoERC20FulfillmentManagerV1 is Ownable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
         }
-        IBandoERC20Fulfillable(service.erc20ContractAddress).registerFulfillment(fulfillment);
+        IBandoERC20Fulfillable(_escrow).registerFulfillment(fulfillment);
     }
 }

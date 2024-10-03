@@ -84,7 +84,7 @@ contract BandoRouterV1 is
         // Handle fee transfer here
 
         // Call the deposit function on the fulfillable contract
-        IBandoFulfillable(service.contractAddress).deposit{value: request.weiAmount}(request);
+        //IBandoFulfillable(service.contractAddress).deposit{value: request.weiAmount}(request);
 
         emit ServiceRequested(serviceID, request);
         return true;

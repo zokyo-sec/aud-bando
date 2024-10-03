@@ -17,10 +17,10 @@ pragma solidity >=0.8.20 <0.9.0;
  */
 struct Service {
     uint256 serviceId;
-    address contractAddress;
-    address erc20ContractAddress;
-    address fulfiller;
+    address payable beneficiary;
     uint256 feeAmount;
+    uint256 releaseablePool;
+    address fulfiller;
 }
 
 /**
@@ -31,7 +31,7 @@ interface IFulfillableRegistry {
 
     function addService(uint256 serviceId, Service memory service) external returns (bool);
 
-    function addFulfiller(address fulfiller) external;
+    function addFulfiller(address fulfiller, uint256 serviceID) external;
 
     function getService(uint256 serviceId) external view returns (Service memory);
 
@@ -40,7 +40,5 @@ interface IFulfillableRegistry {
     function addServiceRef(uint256 serviceId, string memory serviceRef) external returns (string[] memory);
 
     function isRefValid(uint256 serviceId, string memory serviceRef) external view returns (bool);
-
-    function enableERC20(uint256 serviceId, address erc20ContractAddress) external;
 
 }
