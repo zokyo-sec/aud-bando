@@ -189,12 +189,28 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
         _deposits[serviceID][payer] = amount;
     }
 
+    function getERC20DepositsFor(address token, address payer, uint256 serviceID) external view returns (uint256 amount) {
+        amount = _erc20_deposits[serviceID][token][payer];
+    }
+
+    function setERC20DepositsFor(address token, address payer, uint256 serviceID, uint256 amount) external {
+        _erc20_deposits[serviceID][token][payer] = amount;
+    }
+
     function getRefundsFor(address payer, uint256 serviceID) external view returns (uint256 amount) {
         amount = _authorized_refunds[serviceID][payer];
     }
 
     function setRefundsFor(address payer, uint256 serviceID, uint256 amount) external {
         _authorized_refunds[serviceID][payer] = amount;
+    }
+
+    function getERC20RefundsFor(address token, address payer, uint256 serviceID) external view returns (uint256 amount) {
+        amount = _erc20_authorized_refunds[serviceID][token][payer];
+    }
+
+    function setERC20RefundsFor(address token, address payer, uint256 serviceID, uint256 amount) external {
+        _erc20_authorized_refunds[serviceID][token][payer] = amount;
     }
 
     // Function to check if a fulfiller can fulfill a service

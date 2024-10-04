@@ -29,16 +29,119 @@ struct Service {
  */
 interface IFulfillableRegistry {
 
+    /// @notice Adds a new service to the registry.
+    /// @param serviceId The unique identifier for the service.
+    /// @param service The service details.
+    /// @return Returns true if the service is successfully added.
     function addService(uint256 serviceId, Service memory service) external returns (bool);
 
+    /// @notice Registers a new fulfiller for a service.
+    /// @param fulfiller The address of the fulfiller.
+    /// @param serviceID The service identifier.
     function addFulfiller(address fulfiller, uint256 serviceID) external;
 
+    /// @notice Retrieves the service details by its identifier.
+    /// @param serviceId The service identifier.
+    /// @return The service details.
     function getService(uint256 serviceId) external view returns (Service memory);
 
+    /// @notice Removes a service from the registry.
+    /// @param serviceId The service identifier.
     function removeServiceAddress(uint256 serviceId) external;
 
+    /// @notice Adds a reference to a service.
+    /// @param serviceId The service identifier.
+    /// @param serviceRef The reference to the service.
+    /// @return Returns the updated list of references.
     function addServiceRef(uint256 serviceId, string memory serviceRef) external returns (string[] memory);
 
+    /// @notice Checks if a service reference is valid.
+    /// @param serviceId The service identifier.
+    /// @param serviceRef The reference to check.
+    /// @return Returns true if the reference is valid.
     function isRefValid(uint256 serviceId, string memory serviceRef) external view returns (bool);
 
+    /// @notice Retrieves the deposits for a payer and service.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @return amount The amount of deposits.
+    function getDepositsFor(address payer, uint256 serviceID) external view returns (uint256 amount);
+
+    /// @notice Sets the deposits for a payer and service.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @param amount The amount of deposits.
+    function setDepositsFor(address payer, uint256 serviceID, uint256 amount) external;
+
+    /// @notice Retrieves the ERC20 deposits for a payer, token, and service.
+    /// @param token The ERC20 token address.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @return amount The amount of ERC20 deposits.
+    function getERC20DepositsFor(address token, address payer, uint256 serviceID) external view returns (uint256 amount);
+
+    /// @notice Sets the ERC20 deposits for a payer, token, and service.
+    /// @param token The ERC20 token address.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @param amount The amount of ERC20 deposits.
+    function setERC20DepositsFor(address token, address payer, uint256 serviceID, uint256 amount) external;
+
+    /// @notice Retrieves the refunds for a payer and service.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @return amount The amount of refunds.
+    function getRefundsFor(address payer, uint256 serviceID) external view returns (uint256 amount);
+
+    /// @notice Sets the refunds for a payer and service.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @param amount The amount of refunds.
+    function setRefundsFor(address payer, uint256 serviceID, uint256 amount) external;
+
+    /// @notice Retrieves the ERC20 refunds for a payer, token, and service.
+    /// @param token The ERC20 token address.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @return amount The amount of ERC20 refunds.
+    function getERC20RefundsFor(address token, address payer, uint256 serviceID) external view returns (uint256 amount);
+
+    /// @notice Sets the ERC20 refunds for a payer, token, and service.
+    /// @param token The ERC20 token address.
+    /// @param payer The address of the payer.
+    /// @param serviceID The service identifier.
+    /// @param amount The amount of ERC20 refunds.
+    function setERC20RefundsFor(address token, address payer, uint256 serviceID, uint256 amount) external;
+
+      /**
+     * @notice updateServiceBeneficiary
+     * @dev Updates the beneficiary of a service.
+     * @param serviceId the service identifier
+     * @param newBeneficiary the new beneficiary address
+     */
+    function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external;
+
+    /**
+     * @notice updateServiceFeeAmount
+     * @dev Updates the fee amount of a service.
+     * @param serviceId the service identifier
+     * @param newFeeAmount the new fee amount
+     */
+    function updateServiceFeeAmount(uint256 serviceId, uint256 newFeeAmount) external;
+
+    /**
+     * @notice updateServiceReleaseablePool
+     * @dev Updates the releaseable pool of a service.
+     * @param serviceId the service identifier
+     * @param newReleaseablePool the new releaseable pool amount
+     */
+    function updateServiceReleaseablePool(uint256 serviceId, uint256 newReleaseablePool) external;
+
+    /**
+     * @notice updateServiceFulfiller
+     * @dev Updates the fulfiller of a service.
+     * @param serviceId the service identifier
+     * @param newFulfiller the new fulfiller address
+     */
+    function updateServiceFulfiller(uint256 serviceId, address newFulfiller) external;
 }
