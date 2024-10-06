@@ -68,6 +68,17 @@ contract BandoFulfillableV1 is
 
     FulfillableRegistry private _registryContract;
 
+    /// Mapping to store native coin refunds and deposit amounts
+    /// @dev serviceID => userAddress => depositedAmount
+    mapping(
+        uint256 => mapping(address => uint256)
+    ) public _deposits;
+
+    /// @dev serviceID => userAddress => refundableAmount
+    mapping(
+        uint256 => mapping(address => uint256)
+    ) public _authorized_refunds;
+
     // UUPS upgrade authorization
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
@@ -118,6 +129,22 @@ contract BandoFulfillableV1 is
         _registryContract = FulfillableRegistry(fulfillableRegistry_);
     }
 
+    function getDepositsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _deposits[serviceID][payer];
+    }
+
+    function setDepositsFor(address payer, uint256 serviceID, uint256 amount) internal {
+        _deposits[serviceID][payer] = amount;
+    }
+
+    function getRefundsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _authorized_refunds[serviceID][payer];
+    }
+
+    function setRefundsFor(address payer, uint256 serviceID, uint256 amount) internal {
+        _authorized_refunds[serviceID][payer] = amount;
+    }
+
     /**
      * recordsOf
      * @dev Returns the fulfillment records for a given payer.
@@ -147,13 +174,13 @@ contract BandoFulfillableV1 is
         require(_router == msg.sender, "Caller is not the router");
         Service memory service = _registryContract.getService(serviceID);
         uint256 amount = msg.value;
-        uint256 depositsAmount = _registryContract.getDepositsFor(
+        uint256 depositsAmount = getDepositsFor(
             fulfillmentRequest.payer,
             serviceID
         );
         (bool success, uint256 result) = amount.tryAdd(depositsAmount);
         require(success, "Overflow while adding deposits");
-        _registryContract.setDepositsFor(
+        setDepositsFor(
             fulfillmentRequest.payer,
             serviceID,
             result
@@ -196,12 +223,12 @@ contract BandoFulfillableV1 is
         address payable refundee
     ) public virtual nonReentrant returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
-        uint256 authorized_refunds = _registryContract.getRefundsFor(
+        uint256 authorized_refunds = getRefundsFor(
             refundee,
             serviceID
         );
         require(authorized_refunds > 0, "Address is not allowed any refunds");
-        _registryContract.setRefundsFor(refundee, serviceID, 0);
+        setRefundsFor(refundee, serviceID, 0);
         _withdrawRefund(refundee, authorized_refunds);
         return true;
     }
@@ -233,11 +260,11 @@ contract BandoFulfillableV1 is
         address refundee,
         uint256 weiAmount
     ) internal {
-        uint256 authorized_refunds = _registryContract.getRefundsFor(
+        uint256 authorized_refunds = getRefundsFor(
             refundee,
             serviceID
         );
-        uint256 deposits = _registryContract.getDepositsFor(
+        uint256 deposits = getDepositsFor(
             refundee,
             serviceID
         );
@@ -256,8 +283,8 @@ contract BandoFulfillableV1 is
         );
         (bool ssuccess, uint256 subResult) = deposits.trySub(weiAmount);
         require(ssuccess, "Overflow while substracting deposits");
-        _registryContract.setDepositsFor(refundee, serviceID, subResult);
-        _registryContract.setRefundsFor(refundee, serviceID, total_refunds);
+        setDepositsFor(refundee, serviceID, subResult);
+        setRefundsFor(refundee, serviceID, total_refunds);
         emit RefundAuthorized(refundee, weiAmount);
     }
 
@@ -294,7 +321,7 @@ contract BandoFulfillableV1 is
         );
         Service memory service = _registryContract.getService(serviceID);
         address payer = _fulfillmentRecords[fulfillment.id].payer;
-        uint256 deposits = _registryContract.getDepositsFor(payer, serviceID);
+        uint256 deposits = getDepositsFor(payer, serviceID);
         (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[
             fulfillment.id
         ].weiAmount.tryAdd(service.feeAmount);
@@ -319,7 +346,7 @@ contract BandoFulfillableV1 is
                 serviceID,
                 releaseResult
             );
-            _registryContract.setDepositsFor(payer, serviceID, subResult);
+            setDepositsFor(payer, serviceID, subResult);
             _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment
                 .receiptURI;
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;

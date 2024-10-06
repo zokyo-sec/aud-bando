@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Inspired in:
 // OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
-
 pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -14,20 +13,18 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "./periphery/registry/FulfillableRegistry.sol";
 
-
-/**
- * @title BandoERC20FulfillableV1
- * @dev Base escrow contract, holds funds designated for a beneficiary until they
- * withdraw them or a refund is emitted.
- *
- * Intended usage: This contract (and derived escrow contracts) should be a
- * standalone contract, that only interacts with the contract that instantiated
- * it. That way, it is guaranteed that all Ether will be handled according to
- * the `Escrow` rules, and there is no need to check for payable functions or
- * transfers in the inheritance tree. The contract that uses the escrow as its
- * payment method should be its owner, and provide public methods redirecting
- * to the escrow's deposit and withdraw.
- */
+/// @title BandoERC20FulfillableV1
+/// @dev Base escrow contract, holds funds designated for a beneficiary until they
+/// withdraw them or a refund is emitted.
+///
+/// Intended usage: This contract (and derived escrow contracts) should be a
+/// standalone contract, that only interacts with the contract that instantiated
+/// it. That way, it is guaranteed that all Ether will be handled according to
+/// the `Escrow` rules, and there is no need to check for payable functions or
+/// transfers in the inheritance tree. The contract that uses the escrow as its
+/// payment method should be its owner, and provide public methods redirecting
+/// to the escrow's deposit and withdraw.
+/// @custom:bandofp-version 1.0.0
 contract BandoERC20FulfillableV1 is
     IBandoERC20Fulfillable,
     UUPSUpgradeable,
@@ -50,30 +47,41 @@ contract BandoERC20FulfillableV1 is
     /* STATE VARIABLES           */
     /*****************************/
 
-    // Auto-incrementable id storage
+    /// Auto-incrementable id storage
     uint256 private _fulfillmentIdCount;
 
-    // All fulfillment records keyed by their ids
+    /// All fulfillment records keyed by their ids
     mapping(uint256 => ERC20FulFillmentRecord) private _fulfillmentRecords;
 
-    // Deposits mapped to subject addresses
+    /// Deposits mapped to subject addresses
     mapping(address => uint256[]) private _fulfillmentRecordsForSubject;
 
-    // Total deposits registered
+    /// Total deposits registered
     uint256 private _fulfillmentRecordCount;
 
-    // The amounts per token that is available to be released by the beneficiary.
+    /// The amounts per token that is available to be released by the beneficiary.
     mapping(address => uint256) private _releaseablePools;
 
-    address private _fulfillableRegistry;
+    address public _fulfillableRegistry;
 
     FulfillableRegistry private _registryContract;
 
-    // The protocol manager address
-    address private _manager;
+    /// The protocol manager address
+    address public _manager;
 
-    // The protocol router address
-    address private _router;
+    /// The protocol router address
+    address public _router;
+
+    /// Mapping to store erc20 refunds and deposit amounts
+    /// @dev serviceID => tokenAddress => userAddress => depositedAmount
+    mapping(
+        uint256 => mapping(address => mapping(address => uint256))
+    ) private _erc20_deposits;
+
+    /// @dev serviceID => tokenAddress => userAddress => refundableAmount
+    mapping(
+        uint256 => mapping(address => mapping(address => uint256))
+    ) private _erc20_authorized_refunds;
 
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
@@ -82,6 +90,11 @@ contract BandoERC20FulfillableV1 is
     /* FULFILLABLE ESCROW LOGIC  */
     /*****************************/
 
+    /// @dev Initializes the contract.
+    /// @param router_ The address of the protocol router. Tasked with depositing funds.
+    /// @param manager_  The address of the protocol manager. 
+    /// Tasked with withdrawing funds, and registering fulfillments.
+    /// @param fulfillableRegistry_  The address of the fulfillable registry. Where the service details are stored.
     function initialize(
         address router_,
         address manager_,
@@ -93,6 +106,9 @@ contract BandoERC20FulfillableV1 is
             address(fulfillableRegistry_) != address(0),
             "Registry is the zero address"
         );
+        __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         _manager = manager_;
         _router = router_;
         _fulfillableRegistry = fulfillableRegistry_;
@@ -100,59 +116,46 @@ contract BandoERC20FulfillableV1 is
         _registryContract = FulfillableRegistry(_fulfillableRegistry);
     }
 
-    /**
-     * @dev Sets the protocol manager address.
-     * @param manager_ The address of the protocol manager.
-     */
+    /// @dev Sets the protocol manager address.
+    /// @param manager_ The address of the protocol manager.
     function setManager(address manager_) public onlyOwner {
         _manager = manager_;
     }
 
-    /**
-     * @dev Sets the protocol router address.
-     * @param router_ The address of the protocol router.
-     */
+    /// @dev Sets the protocol router address.
+    /// @param router_ The address of the protocol router.
     function setRouter(address router_) public onlyOwner {
         _router = router_;
     }
 
-    /**
-     * @dev Sets the fulfillable registry address.
-     * @param fulfillableRegistry_ The address of the fulfillable registry.
-     */
+    /// @dev Sets the fulfillable registry address.
+    /// @param fulfillableRegistry_ The address of the fulfillable registry.
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = FulfillableRegistry(fulfillableRegistry_);
     }
 
-    /**
-     * recordsOf
-     * @dev Returns the fulfillment records for a given payer.
-     * @param payer the address of the payer
-     */
+    /// @dev Returns the fulfillment records for a given payer.
+    /// @param payer the address of the payer
     function recordsOf(address payer) public view returns (uint256[] memory) {
         return _fulfillmentRecordsForSubject[payer];
     }
 
-    /**
-     * @dev Returns the fulfillment record for a given id.
-     * @param id the id of the record
-     */
+    /// @dev Returns the fulfillment record for a given id.
+    /// @param id the id of the record
     function record(uint256 id) public view returns (ERC20FulFillmentRecord memory) {
         return _fulfillmentRecords[id];
     }
 
-    /**
-     * @dev Stores the sent amount as credit to be claimed.
-     * @param serviceID Service identifier
-     * @param fulfillmentRequest The fulfillment record to be stored.
-     */
+    /// @dev Stores the sent amount as credit to be claimed.
+    /// @param serviceID Service identifier
+    /// @param fulfillmentRequest The fulfillment record to be stored.
     function depositERC20(uint256 serviceID, ERC20FulFillmentRequest memory fulfillmentRequest) public virtual nonReentrant {
         require(_router == msg.sender, "Caller is not the router");
         uint256 amount = fulfillmentRequest.tokenAmount;
         address token = fulfillmentRequest.token;
         Service memory service = _registryContract.getService(serviceID);
-        uint256 depositsAmount = _registryContract.getERC20DepositsFor(
+        uint256 depositsAmount = getERC20DepositsFor(
             token,
             fulfillmentRequest.payer,
             serviceID
@@ -165,7 +168,7 @@ contract BandoERC20FulfillableV1 is
             address(this),
             amount
         );
-        _registryContract.setERC20DepositsFor(
+        setERC20DepositsFor(
             token,
             fulfillmentRequest.payer,
             serviceID,
@@ -193,56 +196,100 @@ contract BandoERC20FulfillableV1 is
         emit ERC20DepositReceived(fulfillmentRecord);
     }
 
-    /**
-     * @dev Refund accumulated balance for a refundee, forwarding all gas to the
-     * recipient.
-     *
-     * WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.
-     * Make sure you trust the recipient, or are either following the
-     * checks-effects-interactions pattern or using {ReentrancyGuard}.
-     *
-     * @param token The address of the ERC20 token.
-     * @param refundee The address whose funds will be withdrawn and transferred to.
-     */
+    /// @dev Retrieves the amount of ERC20 deposits for a given token, payer, and service ID.
+    /// 
+    /// This function is used to query the amount of ERC20 tokens deposited by a payer for a specific service.
+    /// 
+    /// @param token The address of the ERC20 token.
+    /// @param payer The address of the payer.
+    /// @param serviceID The identifier of the service.
+    /// @return amount The amount of ERC20 tokens deposited.
+    function getERC20DepositsFor(address token, address payer, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _erc20_deposits[serviceID][token][payer];
+    }
+
+    /// @dev Sets the amount of ERC20 deposits for a given token, payer, and service ID.
+    /// 
+    /// This function is used to update the amount of ERC20 tokens deposited by a payer for a specific service.
+    /// 
+    /// @param token The address of the ERC20 token.
+    /// @param payer The address of the payer.
+    /// @param serviceID The identifier of the service.
+    /// @param amount The amount of ERC20 tokens to be set.
+    function setERC20DepositsFor(address token, address payer, uint256 serviceID, uint256 amount) private {
+        _erc20_deposits[serviceID][token][payer] = amount;
+    }
+
+    /// @dev Retrieves the amount of ERC20 refunds authorized for a given token, refundee, and service ID.
+    /// 
+    /// This function is used to query the amount of ERC20 tokens authorized for refund to a refundee for a specific service.
+    /// 
+    /// @param token The address of the ERC20 token.
+    /// @param refundee The address of the refundee.
+    /// @param serviceID The identifier of the service.
+    /// @return amount The amount of ERC20 tokens authorized for refund.
+    function getERC20RefundsFor(address token, address refundee, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _erc20_authorized_refunds[serviceID][token][refundee];
+    }
+
+    /// @dev Sets the amount of ERC20 refunds authorized for a given token, refundee, and service ID.
+    /// 
+    /// This function is used to update the amount of ERC20 tokens authorized for refund to a refundee for a specific service.
+    /// 
+    /// @param token The address of the ERC20 token.
+    /// @param refundee The address of the refundee.
+    /// @param serviceID The identifier of the service.
+    /// @param amount The amount of ERC20 tokens to be authorized for refund.
+    function setERC20RefundsFor(address token, address refundee, uint256 serviceID, uint256 amount) private {
+        _erc20_authorized_refunds[serviceID][token][refundee] = amount;
+    }
+    
+
+    /// @dev Refund accumulated balance for a refundee, forwarding all gas to the
+    /// recipient.
+    ///
+    /// WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.
+    /// Make sure you trust the recipient, or are either following the
+    /// checks-effects-interactions pattern or using {ReentrancyGuard}.
+    ///
+    /// @param token The address of the ERC20 token.
+    /// @param refundee The address whose funds will be withdrawn and transferred to.
+    ///
     function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
-        uint256 authorized_refunds = _registryContract.getERC20RefundsFor(
+        uint256 authorized_refunds = getERC20RefundsFor(
             token,
             refundee,
             serviceID
         );
         require(authorized_refunds > 0, "Address is not allowed any refunds");
         _withdrawRefund(token, refundee, authorized_refunds);
-        _registryContract.setERC20RefundsFor(token, refundee, serviceID, 0);
+        setERC20RefundsFor(token, refundee, serviceID, 0);
         return true;
     }
-
-    /**
-    * @dev internal function to withraw.
-    * Should only be called when previously authorized.
-    *
-    * Will emit a RefundWithdrawn event on success.
-    * 
-    * @param token The address of the token.
-    * @param refundee The address to send the value to.
-    */
+    
+    /// @dev internal function to withdraw.
+    /// Should only be called when previously authorized.
+    ///
+    /// Will emit a RefundWithdrawn event on success.
+    ///
+    /// @param token The address of the token.
+    /// @param refundee The address to send the value to.
     function _withdrawRefund(address token, address refundee, uint256 amount) internal {
         IERC20(token).safeTransfer(refundee, amount);
         emit ERC20RefundWithdrawn(token, refundee, amount);
     }
 
-    /**
-     * @dev Allows for refunds to take place.
-     * 
-     * This function will authorize a refund for a later withdrawal.
-     * 
-     * @param token the token to be refunded.
-     * @param refundee the record to be
-     * @param amount the amount to be authorized.
-     */
+    /// @dev Allows for refunds to take place.
+    /// 
+    /// This function will authorize a refund for a later withdrawal.
+    /// 
+    /// @param token the token to be refunded.
+    /// @param refundee the record to be
+    /// @param amount the amount to be authorized.
     function _authorizeRefund(Service memory service, address token, address refundee, uint256 amount) internal {
-        (bool asuccess, uint256 addResult) = _registryContract.getERC20RefundsFor(token, refundee, service.serviceId).tryAdd(amount);
-        uint256 depositsAmount = _registryContract.getERC20DepositsFor(
+        (bool asuccess, uint256 addResult) = getERC20RefundsFor(token, refundee, service.serviceId).tryAdd(amount);
+        uint256 depositsAmount = getERC20DepositsFor(
             token,
             refundee,
             service.serviceId
@@ -259,40 +306,38 @@ contract BandoERC20FulfillableV1 is
         );
         (bool ssuccess, uint256 subResult) = depositsAmount.trySub(amount);
         require(ssuccess, "Overflow while substracting deposits");
-        _registryContract.setERC20DepositsFor(
+        setERC20DepositsFor(
             token,
             refundee,
             service.serviceId,
             subResult
         );
-        _registryContract.setERC20RefundsFor(token, refundee, service.serviceId, total_refunds);
+        setERC20RefundsFor(token, refundee, service.serviceId, total_refunds);
         emit ERC20RefundAuthorized(refundee, amount);
     }
 
-    /**
-     * @dev The fulfiller registers a fulfillment.
-     *
-     * We need to verify the amount of the fulfillment is actually available to release.
-     * Then we can enrich the result with an auto-incremental unique ID.
-     * and the timestamp when the record get inserted.
-     *
-     * If the fulfillment has failed:
-     * - a refund will be authorized for a later withdrawal.
-     *
-     * If these verifications pass:
-     * - add the amount fulfilled to the release pool.
-     * - substract the amount from the payer's deposits.
-     * - update the FulFillmentRecord to the blockchain.
-     *
-     * @param fulfillment the fulfillment result attached to it.
-     */
+    /// @dev The fulfiller registers a fulfillment.
+    ///
+    /// We need to verify the amount of the fulfillment is actually available to release.
+    /// Then we can enrich the result with an auto-incremental unique ID.
+    /// and the timestamp when the record get inserted.
+    ///
+    /// If the fulfillment has failed:
+    /// - a refund will be authorized for a later withdrawal.
+    ///
+    /// If these verifications pass:
+    /// - add the amount fulfilled to the release pool.
+    /// - substract the amount from the payer's deposits.
+    /// - update the FulFillmentRecord to the blockchain.
+    ///
+    /// @param fulfillment the fulfillment result attached to it.
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual nonReentrant returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
         require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
         require(_fulfillmentRecords[fulfillment.id].status == FulFillmentResultState.PENDING, "Fulfillment already registered");
         Service memory service = _registryContract.getService(serviceID);
         address token = _fulfillmentRecords[fulfillment.id].token;
-        uint depositsAmount = _registryContract.getERC20DepositsFor(
+        uint depositsAmount = getERC20DepositsFor(
             token,
             _fulfillmentRecords[fulfillment.id].payer,
             serviceID
@@ -313,7 +358,7 @@ contract BandoERC20FulfillableV1 is
             (bool dsuccess, uint256 subResult) = depositsAmount.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
             _releaseablePools[token] = releaseResult;
-            _registryContract.setERC20DepositsFor(
+            setERC20DepositsFor(
                 token,
                 _fulfillmentRecords[fulfillment.id].payer,
                 serviceID,
@@ -326,10 +371,8 @@ contract BandoERC20FulfillableV1 is
         return true;
     }
 
-    /**
-     * @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
-     * Only the fulfiller of the service can withdraw the releaseable pool.
-     */
+    /// @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// Only the fulfiller of the service can withdraw the releaseable pool.
     function beneficiaryWithdraw(uint256 serviceID, address token) public virtual nonReentrant {
         require(_manager == msg.sender, "Caller is not the manager");
         require(_releaseablePools[token] > 0, "There is no balance to release.");

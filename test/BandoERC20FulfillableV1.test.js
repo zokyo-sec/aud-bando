@@ -4,6 +4,30 @@ const { v4: uuidv4 } = require('uuid');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 
+const DUMMY_SERVICE = {
+  serviceId: 1,
+  beneficiary: DUMMY_ADDRESS,
+  feeAmount: 100,
+  releaseablePool: 1000,
+  fulfiller: DUMMY_ADDRESS
+};
+
+const DUMMY_SERVICE_2 = {
+  serviceId: 2,
+  beneficiary: DUMMY_ADDRESS,
+  feeAmount: 200,
+  releaseablePool: 2000,
+  fulfiller: DUMMY_ADDRESS
+};
+
+const DUMMY_SERVICE_3 = {
+  serviceId: 3,
+  beneficiary: DUMMY_ADDRESS,
+  feeAmount: 300,
+  releaseablePool: 3000,
+  fulfiller: DUMMY_ADDRESS
+};
+
 const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   tokenAmount: 100,
@@ -34,12 +58,11 @@ const FAILED_FULFILLMENT_RESULT = {
 }
 
 let escrow;
-let fulfillerContract;
+let fulfillableContract;
 let owner;
-let beneficiary;
-let fulfiller;
 let router;
 let erc20Test;
+let registryAddress;
 
 describe("BandoERC20FulfillableV1", () => {
   
@@ -47,28 +70,42 @@ describe("BandoERC20FulfillableV1", () => {
     [owner, beneficiary, fulfiller, router] = await ethers.getSigners();
     erc20Test = await ethers.deployContract('DemoToken');
     await erc20Test.waitForDeployment();
-    fulfillerContract = await ethers.deployContract('BandoERC20FulfillableV1', [
-      beneficiary, 1, router, fulfiller
-    ]);
-    await erc20Test.approve(await fulfillerContract.getAddress(), ethers.parseUnits('1000000', 18));
-    await fulfillerContract.waitForDeployment();
-    escrow = fulfillerContract.attach(await fulfillerContract.getAddress())
+
+    // deploy the service registry
+    const ServiceRegistry = await ethers.getContractFactory('FulfillableRegistry');
+    const serviceRegistry = await upgrades.deployProxy(ServiceRegistry, []);
+    registryAddress = await serviceRegistry.getAddress();
+    await serviceRegistry.waitForDeployment();
+
+    // deploy the fulfillable escrow contract
+    const FulfillableV1 = await ethers.getContractFactory('BandoERC20FulfillableV1');
+    fulfillableContract = await upgrades.deployProxy(
+      FulfillableV1,
+      [await router.getAddress(), await owner.getAddress(), registryAddress]
+    );
+    await fulfillableContract.waitForDeployment();
+
+    await erc20Test.approve(await fulfillableContract.getAddress(), ethers.parseUnits('1000000', 18));
+    escrow = FulfillableV1.attach(await fulfillableContract.getAddress())
     taddr = await erc20Test.getAddress();
     DUMMY_FULFILLMENTREQUEST.token = taddr;
     SUCCESS_FULFILLMENT_RESULT.token = taddr;
   });
 
   describe("Configuration Specs", async () => {
-    it("should set the beneficiary correctly", async () => {
-      const b = await escrow.beneficiary();
-      expect(b).to.be.a.properAddress
-      expect(b).to.be.equal(beneficiary)
+    it("should set the serviceRegistry correctly", async () => {
+      const b = await escrow._fulfillableRegistry();
+      expect(b).to.be.a.properAddress;
+      expect(b).to.be.equal(registryAddress);
     });
 
-    it("should set the fulfiller correctly", async () => {
-      const f = await escrow.fulfiller();
-      expect(f).to.be.a.properAddress
-      expect(f).to.be.equal(fulfiller)
+    it("should set the manager and router correctly", async () => {
+      const m = await escrow._manager();
+      const r = await escrow._router();
+      expect(m).to.be.a.properAddress
+      expect(r).to.be.a.properAddress
+      expect(m).to.be.equal(await owner.getAddress())
+      expect(r).to.be.equal(await router.getAddress())
     });
   });
 
@@ -77,6 +114,17 @@ describe("BandoERC20FulfillableV1", () => {
       await expect(
         escrow.depositERC20(DUMMY_FULFILLMENTREQUEST)
       ).to.be.revertedWith('Caller is not the router');
+    });
+
+    it("should not allow a payable deposit from an unexistent service", async () => {
+      // TODO
+    });
+
+    it("should not allow a payable deposit from an unexistent token", async () => {
+      DUMMY_FULFILLMENTREQUEST.token = DUMMY_ADDRESS;
+      await expect(
+        escrow.depositERC20(DUMMY_FULFILLMENTREQUEST)
+      ).to.be.revertedWith('Token is not supported');
     });
 
     it("should allow a payable deposit coming from the router.", async () => {

@@ -12,45 +12,33 @@ import './IFulfillableRegistry.sol';
 contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
 
     // Mapping to store services by their ID
-    mapping(uint256 => Service) private _serviceRegistry;
+    mapping(uint256 => Service) public _serviceRegistry;
 
     /// Mapping to store service references by service ID
     /// @dev serviceID => (index => reference)
-    mapping(uint256 => mapping(uint256 => string)) private _serviceRefs;
+    mapping(uint256 => mapping(uint256 => string)) public _serviceRefs;
 
     /// Mapping to store the count of references for each service
     /// @dev serviceID => reference count
-    mapping(uint256 => uint256) private _serviceRefCount;
+    mapping(uint256 => uint256) public _serviceRefCount;
 
     /// Mapping to store fulfillers and their associated services
     /// @dev fulfiller => (serviceId => exists)
-    mapping(address => mapping(uint256 => bool)) private _fulfillerServices;
+    mapping(address => mapping(uint256 => bool)) public _fulfillerServices;
+
     /// @dev fulfiller => service count
-    mapping(address => uint256) private _fulfillerServiceCount;
-
-    /// Mapping to store native coin refunds and deposit amounts
-    /// @dev serviceID => userAddress => depositedAmount
-    mapping(
-        uint256 => mapping(address => uint256)
-    ) private _deposits;
-    /// @dev serviceID => userAddress => refundableAmount
-    mapping(
-        uint256 => mapping(address => uint256)
-    ) private _authorized_refunds;
-
-    /// Mapping to store erc20 refunds and deposit amounts
-    /// @dev serviceID => tokenAddress => userAddress => depositedAmount
-    mapping(
-        uint256 => mapping(address => mapping(address => uint256))
-    ) private _erc20_deposits;
-    /// @dev serviceID => tokenAddress => userAddress => refundableAmount
-    mapping(
-        uint256 => mapping(address => mapping(address => uint256))
-    ) private _erc20_authorized_refunds;
+    mapping(address => uint256) public _fulfillerServiceCount;
 
     uint256 _serviceCount;
 
+    address public _manager;
+
     event ServiceRemoved(uint256 serviceID);
+
+    modifier onlyManager() {
+        require(msg.sender == _manager, "FulfillableRegistry: Only the manager can call this function");
+        _;
+    }
 
     function initialize() public virtual initializer {
         __Ownable_init(msg.sender);
@@ -60,12 +48,20 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /**
+     * @dev Sets the protocol manager address.
+     * @param manager_ The address of the protocol manager.
+     */
+    function setManager(address manager_) public onlyOwner {
+        _manager = manager_;
+    }
+
+    /**
      * addService
      * This method must only be called by the owner.
      * @param serviceId the service identifier
      * @param service the service info object
      */
-    function addService(uint256 serviceId, Service memory service) external returns (bool) {
+    function addService(uint256 serviceId, Service memory service) external onlyManager returns (bool) {
         require(
             _serviceRegistry[serviceId].fulfiller == address(0), 
             'FulfillableRegistry: Service already exists'
@@ -157,7 +153,7 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
      * @param serviceId the service identifier
      * @param ref the reference to the service
      */
-    function addServiceRef(uint256 serviceId, string memory ref) external returns (string[] memory) {
+    function addServiceRef(uint256 serviceId, string memory ref) external onlyManager returns (string[] memory) {
         require(_serviceRegistry[serviceId].fulfiller != address(0), "Service does not exist");
         uint256 refCount = _serviceRefCount[serviceId];
         _serviceRefs[serviceId][refCount] = ref; // Store the reference at the current index
@@ -179,38 +175,6 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
             }
         }
         return false;
-    }
-
-    function getDepositsFor(address payer, uint256 serviceID) external view returns (uint256 amount) {
-        amount = _deposits[serviceID][payer];
-    }
-
-    function setDepositsFor(address payer, uint256 serviceID, uint256 amount) external {
-        _deposits[serviceID][payer] = amount;
-    }
-
-    function getERC20DepositsFor(address token, address payer, uint256 serviceID) external view returns (uint256 amount) {
-        amount = _erc20_deposits[serviceID][token][payer];
-    }
-
-    function setERC20DepositsFor(address token, address payer, uint256 serviceID, uint256 amount) external {
-        _erc20_deposits[serviceID][token][payer] = amount;
-    }
-
-    function getRefundsFor(address payer, uint256 serviceID) external view returns (uint256 amount) {
-        amount = _authorized_refunds[serviceID][payer];
-    }
-
-    function setRefundsFor(address payer, uint256 serviceID, uint256 amount) external {
-        _authorized_refunds[serviceID][payer] = amount;
-    }
-
-    function getERC20RefundsFor(address token, address payer, uint256 serviceID) external view returns (uint256 amount) {
-        amount = _erc20_authorized_refunds[serviceID][token][payer];
-    }
-
-    function setERC20RefundsFor(address token, address payer, uint256 serviceID, uint256 amount) external {
-        _erc20_authorized_refunds[serviceID][token][payer] = amount;
     }
 
     // Function to check if a fulfiller can fulfill a service
