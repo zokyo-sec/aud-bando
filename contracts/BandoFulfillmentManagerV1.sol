@@ -3,8 +3,10 @@ pragma solidity >=0.8.20 <0.9.0;
 
 import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
 import './periphery/registry/IFulfillableRegistry.sol';
 import './IBandoFulfillable.sol';
+import './BandoERC20FulfillableV1.sol';
 import './BandoFulfillableV1.sol';
 import './FulfillmentTypes.sol';
 
@@ -34,16 +36,20 @@ import './FulfillmentTypes.sol';
  * and withdraw a refund.
  * 
  */
-contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
+contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable {
 
     address private _serviceRegistry;
+    address private _escrow;
+    address private _erc20_escrow;
 
     event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
-    function initialize(address serviceRegistry) public virtual initializer {
+    function initialize(address serviceRegistry, address escrow, address erc20Escrow) public virtual initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         _serviceRegistry = serviceRegistry;
+        _escrow = escrow;
+        _erc20_escrow = erc20Escrow;
     }
 
     // UUPS upgrade authorization
@@ -63,28 +69,26 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      */
     function setService(
         uint256 serviceID,
-        address payable beneficiaryAddress,
         uint256 feeAmount,
         address fulfiller,
-        address router
+        address payable beneficiary
     ) 
-        public 
+        public
         virtual
         onlyOwner 
-        returns (address)
+        returns (Service memory)
     {
         require(serviceID > 0, "Service ID is invalid");
-        BandoFulfillableV1 _escrow = new BandoFulfillableV1(beneficiaryAddress, serviceID, feeAmount, router, fulfiller);
-        _escrow.setFee(feeAmount);
-        IFulfillableRegistry(_serviceRegistry).addService(serviceID, Service({
+        Service memory service = Service({
             serviceId: serviceID,
-            contractAddress: address(_escrow),
-            erc20ContractAddress: address(0),
             fulfiller: fulfiller,
-            feeAmount: feeAmount
-        }));
+            feeAmount: feeAmount,
+            releaseablePool: 0,
+            beneficiary: beneficiary
+        });
+        IFulfillableRegistry(_serviceRegistry).addService(serviceID, service);
         emit ServiceAdded(serviceID, address(_escrow), fulfiller);
-        return address(_escrow);
+        return service;
     }
 
     /**
@@ -111,7 +115,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        require(IBandoFulfillable(service.contractAddress).withdrawRefund(refundee), "Withdrawal failed");
+        require(IBandoFulfillable(_escrow).withdrawRefund(serviceID, refundee), "Withdrawal failed");
     }
 
     /**
@@ -121,11 +125,40 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
      * @param serviceID uint256 service identifier
      * @param fulfillment the fullfilment result
      */
-    function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
+    function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual nonReentrant {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        IBandoFulfillable(service.contractAddress).registerFulfillment(fulfillment);
+        IBandoFulfillable(_escrow).registerFulfillment(serviceID, fulfillment);
+    }
+
+    /**
+     * @dev withdrawRefund
+     * This method must only be called by the service fulfiller or the owner.
+     * @param serviceID uint256 service identifier
+     * @param refundee address payable address of the refund recipient
+     */
+    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant {
+        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
+        }
+        require(IBandoERC20Fulfillable(_escrow).withdrawERC20Refund(serviceID, token, refundee), "Withdrawal failed");
+    }
+
+    /**
+     * @dev registerERC20Fulfillment
+     * This method must only be called by the service fulfiller or the owner
+     * It registers a fulfillment result for a service calling the escrow contract.
+     * @param serviceID uint256 service identifier
+     * @param fulfillment the fullfilment result
+     */
+    function registerERC20Fulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual nonReentrant {
+        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        }
+        IBandoERC20Fulfillable(_escrow).registerFulfillment(serviceID, fulfillment);
     }
 }

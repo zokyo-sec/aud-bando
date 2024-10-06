@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import { FulFillmentRequest, ERC20FulFillmentRequest } from '../FulfillmentTypes.sol';
 import { Service, IFulfillableRegistry } from '../periphery/registry/IFulfillableRegistry.sol';
+import { FulfillableRegistry } from '../periphery/registry/FulfillableRegistry.sol';
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
@@ -28,9 +29,9 @@ library FulfillmentRequestLib {
             revert InvalidFiatAmount();
         }
         
-        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        Service memory service = FulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
-        if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
+        if (!FulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
         }
         
@@ -58,9 +59,9 @@ library FulfillmentRequestLib {
             revert InvalidFiatAmount();
         }
         
-        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        Service memory service = FulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
-        if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
+        if (!FulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
         }
         
