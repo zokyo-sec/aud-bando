@@ -31,10 +31,10 @@ contract BandoRouterV1 is
     using Address for address payable;
     using Math for uint256;
 
-    address private _fulfillableRegistry;
-    address private _tokenRegistry;
-    address payable private _escrow;
-    address payable private _erc20Escrow;
+    address public _fulfillableRegistry;
+    address public _tokenRegistry;
+    address payable public _escrow;
+    address payable public _erc20Escrow;
 
     event ERC20ServiceRequested(uint256 serviceID, ERC20FulFillmentRequest request);
     event ServiceRequested(uint256 serviceID, FulFillmentRequest request);
