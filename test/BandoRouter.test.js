@@ -26,7 +26,8 @@ const DUMMY_VALID_FULFILLMENTREQUEST = {
 }
 
 let routerContract;
-let regexValidator;
+let escrow;
+let erc20_escrow
 let v2;
 let registry;
 let manager;
@@ -56,17 +57,38 @@ describe("BandoRouterV1", function () {
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
     /**
-     * set test service
+     * deploy escrows
+     */
+    const Escrow = await ethers.getContractFactory('BandoFulfillableV1');
+    const e = await upgrades.deployProxy(Escrow, []);
+    await e.waitForDeployment();
+    escrow = await Escrow.attach(await e.getAddress());
+    const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1');
+    const erc20 = await upgrades.deployProxy(ERC20Escrow, []);
+    await erc20.waitForDeployment();
+    erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
+
+    /**
+     * configure protocol state vars.
      */
     const feeAmount = ethers.parseUnits('0.1', 'ether');
+    await escrow.setManager(await manager.getAddress());
+    await escrow.setFulfillableRegistry(registryAddress);
+    await escrow.setRouter(await routerContract.getAddress());
+    await erc20_escrow.setManager(await manager.getAddress());
+    await erc20_escrow.setFulfillableRegistry(registryAddress);
+    await erc20_escrow.setRouter(await routerContract.getAddress());
     await registry.setManager(await manager.getAddress());
     await manager.setServiceRegistry(registryAddress);
-    await manager.setEscrow(DUMMY_ADDRESS);
-    await manager.setERC20Escrow(DUMMY_ADDRESS);
+    await manager.setEscrow(await escrow.getAddress());
+    await manager.setERC20Escrow(await erc20_escrow.getAddress());
     await v1.setFulfillableRegistry(registryAddress);
     await v1.setTokenRegistry(DUMMY_ADDRESS);
-    await v1.setEscrow(DUMMY_ADDRESS);
-    await v1.setERC20Escrow(DUMMY_ADDRESS);
+    await v1.setEscrow(await escrow.getAddress());
+    await v1.setERC20Escrow(await erc20_escrow.getAddress());
+    /**
+     * set dummy service
+     */
     const serviceResponse = await manager.setService(
       1,
       feeAmount,
@@ -87,11 +109,11 @@ describe("BandoRouterV1", function () {
     });
 
     it("should set the escrow correctly", async () => {
-      assert.equal(await v1._escrow(), DUMMY_ADDRESS);
+      assert.equal(await v1._escrow(), await escrow.getAddress());
     });
 
     it("should set the erc20Escrow correctly", async () => {
-      assert.equal(await v1._erc20Escrow(), DUMMY_ADDRESS);
+      assert.equal(await v1._erc20Escrow(), await erc20_escrow.getAddress());
     });
   });
 
