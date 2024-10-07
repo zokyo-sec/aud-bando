@@ -38,9 +38,9 @@ import './FulfillmentTypes.sol';
  */
 contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable {
 
-    address private _serviceRegistry;
-    address private _escrow;
-    address private _erc20_escrow;
+    address public _serviceRegistry;
+    address public _escrow;
+    address public _erc20_escrow;
 
     event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
