@@ -21,10 +21,13 @@ describe('BandoFulfillableRegistry', () => {
         const registryAddress = await registryInstance.getAddress();
         registry = registryInstance;
         const BandoFulfillmentManager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
-        const bandoFulfillmentManager = await upgrades.deployProxy(BandoFulfillmentManager, [registryAddress, DUMMY_ADDRESS, DUMMY_ADDRESS]);
+        const bandoFulfillmentManager = await upgrades.deployProxy(BandoFulfillmentManager, []);
         await bandoFulfillmentManager.waitForDeployment();
         manager = await BandoFulfillmentManager.attach(await bandoFulfillmentManager.getAddress());
         await registry.setManager(await manager.getAddress());
+        await manager.setServiceRegistry(registryAddress);
+        await manager.setEscrow(DUMMY_ADDRESS);
+        await manager.setERC20Escrow(DUMMY_ADDRESS);
     });
 
     describe('setService', () => {
