@@ -1,32 +1,9 @@
 const { expect, assert } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 const { v4: uuidv4 } = require('uuid');
+const { setDummyServices, setupRegistry } = require('./utils/registryUtils');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
-
-const DUMMY_SERVICE = {
-  serviceId: 1,
-  beneficiary: DUMMY_ADDRESS,
-  feeAmount: 100,
-  releaseablePool: 1000,
-  fulfiller: DUMMY_ADDRESS
-};
-
-const DUMMY_SERVICE_2 = {
-  serviceId: 2,
-  beneficiary: DUMMY_ADDRESS,
-  feeAmount: 200,
-  releaseablePool: 2000,
-  fulfiller: DUMMY_ADDRESS
-};
-
-const DUMMY_SERVICE_3 = {
-  serviceId: 3,
-  beneficiary: DUMMY_ADDRESS,
-  feeAmount: 300,
-  releaseablePool: 3000,
-  fulfiller: DUMMY_ADDRESS
-};
 
 const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
@@ -72,10 +49,9 @@ describe("BandoERC20FulfillableV1", () => {
     await erc20Test.waitForDeployment();
 
     // deploy the service registry
-    const ServiceRegistry = await ethers.getContractFactory('FulfillableRegistry');
-    const serviceRegistry = await upgrades.deployProxy(ServiceRegistry, []);
-    registryAddress = await serviceRegistry.getAddress();
-    await serviceRegistry.waitForDeployment();
+    const { registryInstance, manager } = await setupRegistry(owner);
+    registryAddress = await registryInstance.getAddress();
+    await setDummyServices(registryInstance, manager);
 
     // deploy the fulfillable escrow contract
     const FulfillableV1 = await ethers.getContractFactory('BandoERC20FulfillableV1');
