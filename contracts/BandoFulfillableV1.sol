@@ -59,12 +59,12 @@ contract BandoFulfillableV1 is
     uint256 private _fulfillmentRecordCount;
 
     // The protocol manager address
-    address private _manager;
+    address public _manager;
 
     // The protocol router address
-    address private _router;
+    address public _router;
 
-    address private _fulfillableRegistry;
+    address public _fulfillableRegistry;
 
     FulfillableRegistry private _registryContract;
 
@@ -86,22 +86,11 @@ contract BandoFulfillableV1 is
     /* FULFILLABLE ESCROW LOGIC  */
     /*****************************/
 
-    function initialize(
-        address router_,
-        address manager_,
-        address fulfillableRegistry_
-    ) public virtual initializer {
-        require(address(router_) != address(0), "Router is the zero address");
-        require(address(manager_) != address(0), "Manager is the zero address");
-        require(
-            address(fulfillableRegistry_) != address(0),
-            "Registry is the zero address"
-        );
-        _manager = manager_;
-        _router = router_;
-        _fulfillableRegistry = fulfillableRegistry_;
+    function initialize() public virtual initializer {
+        __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         _fulfillmentIdCount = 1;
-        _registryContract = FulfillableRegistry(_fulfillableRegistry);
     }
 
     /**
@@ -109,6 +98,7 @@ contract BandoFulfillableV1 is
      * @param manager_ The address of the protocol manager.
      */
     function setManager(address manager_) public onlyOwner {
+        require(manager_ != address(0), "Manager cannot be the zero address");
         _manager = manager_;
     }
 
@@ -117,6 +107,7 @@ contract BandoFulfillableV1 is
      * @param router_ The address of the protocol router.
      */
     function setRouter(address router_) public onlyOwner {
+        require(router_ != address(0), "Router cannot be the zero address");
         _router = router_;
     }
 
@@ -125,6 +116,7 @@ contract BandoFulfillableV1 is
      * @param fulfillableRegistry_ The address of the fulfillable registry.
      */
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
+        require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = FulfillableRegistry(fulfillableRegistry_);
     }

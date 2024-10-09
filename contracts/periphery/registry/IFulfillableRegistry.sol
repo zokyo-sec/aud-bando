@@ -52,8 +52,7 @@ interface IFulfillableRegistry {
     /// @notice Adds a reference to a service.
     /// @param serviceId The service identifier.
     /// @param serviceRef The reference to the service.
-    /// @return Returns the updated list of references.
-    function addServiceRef(uint256 serviceId, string memory serviceRef) external returns (string[] memory);
+    function addServiceRef(uint256 serviceId, string memory serviceRef) external;
 
     /// @notice Checks if a service reference is valid.
     /// @param serviceId The service identifier.

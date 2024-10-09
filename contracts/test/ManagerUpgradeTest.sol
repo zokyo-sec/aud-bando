@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.20 <0.9.0;
 
-import "./BandoRouterV1.sol";
+import "../BandoFulfillmentManagerV1.sol";
 
 /**
- * Test upgrade on router
+ * Test upgrade on manager
  */
-contract RouterUpgradeTester is BandoRouterV1 {
+contract ManagerUpgradeTest is BandoFulfillmentManagerV1 {
 
     function isUpgrade() public view onlyOwner returns (bool) {
         return true;

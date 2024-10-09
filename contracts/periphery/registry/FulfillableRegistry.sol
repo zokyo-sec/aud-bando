@@ -52,6 +52,7 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
      * @param manager_ The address of the protocol manager.
      */
     function setManager(address manager_) public onlyOwner {
+        require(manager_ != address(0), "FulfillableRegistry: Manager cannot be the zero address");
         _manager = manager_;
     }
 
@@ -153,7 +154,7 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
      * @param serviceId the service identifier
      * @param ref the reference to the service
      */
-    function addServiceRef(uint256 serviceId, string memory ref) external onlyManager returns (string[] memory) {
+    function addServiceRef(uint256 serviceId, string memory ref) external onlyManager {
         require(_serviceRegistry[serviceId].fulfiller != address(0), "Service does not exist");
         uint256 refCount = _serviceRefCount[serviceId];
         _serviceRefs[serviceId][refCount] = ref; // Store the reference at the current index

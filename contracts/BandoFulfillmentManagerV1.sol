@@ -38,23 +38,46 @@ import './FulfillmentTypes.sol';
  */
 contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable {
 
-    address private _serviceRegistry;
-    address private _escrow;
-    address private _erc20_escrow;
+    address public _serviceRegistry;
+    address public _escrow;
+    address public _erc20_escrow;
 
     event ServiceAdded(uint256 serviceID, address escrow, address fulfiller);
 
-    function initialize(address serviceRegistry, address escrow, address erc20Escrow) public virtual initializer {
+    function initialize() public virtual initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
-        _serviceRegistry = serviceRegistry;
-        _escrow = escrow;
-        _erc20_escrow = erc20Escrow;
     }
 
     // UUPS upgrade authorization
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    /**
+     * @dev Sets the service registry address.
+     * @param serviceRegistry_ The address of the service registry.
+     */
+    function setServiceRegistry(address serviceRegistry_) public onlyOwner {
+        require(serviceRegistry_ != address(0), "Service registry cannot be the zero address");
+        _serviceRegistry = serviceRegistry_;
+    }
+
+    /**
+     * @dev Sets the escrow address.
+     * @param escrow_ The address of the escrow.
+     */
+    function setEscrow(address payable escrow_) public onlyOwner {
+        require(escrow_ != address(0), "Escrow cannot be the zero address");
+        _escrow = escrow_;
+    }
+
+    /**
+     * @dev Sets the ERC20 escrow address.
+     * @param erc20Escrow_ The address of the ERC20 escrow.
+     */
+    function setERC20Escrow(address payable erc20Escrow_) public onlyOwner {
+        require(erc20Escrow_ != address(0), "ERC20 escrow cannot be the zero address");
+        _erc20_escrow = erc20Escrow_;
+    }
 
     /**
      * @dev setService
@@ -79,6 +102,8 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
         returns (Service memory)
     {
         require(serviceID > 0, "Service ID is invalid");
+        require(fulfiller != address(0), "Fulfiller address is invalid");
+        require(beneficiary != address(0), "Beneficiary address is invalid");
         Service memory service = Service({
             serviceId: serviceID,
             fulfiller: fulfiller,
@@ -98,10 +123,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
      * It sets up a service reference for a service.
      * @param serviceID uint256 service identifier
      * @param serviceRef string service reference
-     * @return bool
      */
-    function setServiceRef(uint256 serviceID, string memory serviceRef) public virtual onlyOwner returns (string[] memory) {
-        return IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
+    function setServiceRef(uint256 serviceID, string memory serviceRef) public virtual onlyOwner {
+        IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
     }
 
     /**

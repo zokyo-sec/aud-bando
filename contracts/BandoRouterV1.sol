@@ -22,7 +22,7 @@ import "./libraries/FulfillmentRequestLib.sol";
  * The contract will validate the request and transfer the payment to the fulfillable contract.
  * -----------------------
  */
-contract BandoRouterV1 is 
+contract BandoRouterV1 is
     OwnableUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
@@ -31,10 +31,10 @@ contract BandoRouterV1 is
     using Address for address payable;
     using Math for uint256;
 
-    address private _fulfillableRegistry;
-    address private _tokenRegistry;
-    address payable private _escrow;
-    address payable private _erc20Escrow;
+    address public _fulfillableRegistry;
+    address public _tokenRegistry;
+    address payable public _escrow;
+    address payable public _erc20Escrow;
 
     event ERC20ServiceRequested(uint256 serviceID, ERC20FulFillmentRequest request);
     event ServiceRequested(uint256 serviceID, FulFillmentRequest request);
@@ -43,20 +43,11 @@ contract BandoRouterV1 is
     /**
      * @dev Constructor.
      */
-    function initialize(
-        address serviceRegistry,
-        address tokenRegistry,
-        address payable escrow,
-        address payable erc20Escrow
-    ) public virtual initializer {
+    function initialize() public virtual initializer {
         __Ownable_init(msg.sender);
         __Pausable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
-        _fulfillableRegistry = serviceRegistry;
-        _tokenRegistry = tokenRegistry;
-        _escrow = escrow;
-        _erc20Escrow = erc20Escrow;
     }
 
     function pause() public onlyOwner {
@@ -75,6 +66,42 @@ contract BandoRouterV1 is
         onlyOwner
         override
     {}
+
+    /**
+     * @dev Sets the fulfillable registry address.
+     * @param fulfillableRegistry_ The address of the fulfillable registry.
+     */
+    function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
+        require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
+        _fulfillableRegistry = fulfillableRegistry_;
+    }
+
+    /**
+     * @dev Sets the token registry address.
+     * @param tokenRegistry_ The address of the token registry.
+     */
+    function setTokenRegistry(address tokenRegistry_) public onlyOwner {
+        require(tokenRegistry_ != address(0), "Token registry cannot be the zero address");
+        _tokenRegistry = tokenRegistry_;
+    }
+
+    /**
+     * @dev Sets the escrow address.
+     * @param escrow_ The address of the escrow.
+     */
+    function setEscrow(address payable escrow_) public onlyOwner {
+        require(escrow_ != address(0), "Escrow cannot be the zero address");
+        _escrow = escrow_;
+    }
+
+    /**
+     * @dev Sets the ERC20 escrow address.
+     * @param erc20Escrow_ The address of the ERC20 escrow.
+     */
+    function setERC20Escrow(address payable erc20Escrow_) public onlyOwner {
+        require(erc20Escrow_ != address(0), "ERC20 escrow cannot be the zero address");
+        _erc20Escrow = erc20Escrow_;
+    }
 
     /**
      * requestERC20Service
