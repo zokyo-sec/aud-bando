@@ -104,7 +104,6 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
         require(serviceID > 0, "Service ID is invalid");
         require(fulfiller != address(0), "Fulfiller address is invalid");
         require(beneficiary != address(0), "Beneficiary address is invalid");
-        require(feeAmount > 0, "Fee amount is invalid");
         Service memory service = Service({
             serviceId: serviceID,
             fulfiller: fulfiller,

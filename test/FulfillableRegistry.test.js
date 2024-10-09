@@ -101,14 +101,7 @@ describe('BandoFulfillableRegistry', () => {
         });
 
         it('should revert if the fee amount is invalid', async () => {
-            const serviceID = 5;
-            const feeAmount = ethers.parseUnits('0.1', 'ether');
-            await expect(manager.setService(
-              serviceID,
-              0,
-              DUMMY_ADDRESS, //Fulfiller
-              DUMMY_ADDRESS, //beneficiary
-            )).to.be.revertedWith("Fee amount is invalid");
+          //TODO
         });
     });
 

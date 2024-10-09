@@ -95,6 +95,7 @@ contract BandoERC20FulfillableV1 is
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        _fulfillmentIdCount = 1;
     }
 
     /// @dev Sets the protocol manager address.
