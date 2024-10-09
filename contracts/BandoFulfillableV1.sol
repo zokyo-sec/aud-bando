@@ -59,12 +59,12 @@ contract BandoFulfillableV1 is
     uint256 private _fulfillmentRecordCount;
 
     // The protocol manager address
-    address private _manager;
+    address public _manager;
 
     // The protocol router address
-    address private _router;
+    address public _router;
 
-    address private _fulfillableRegistry;
+    address public _fulfillableRegistry;
 
     FulfillableRegistry private _registryContract;
 
@@ -90,6 +90,7 @@ contract BandoFulfillableV1 is
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        _fulfillmentIdCount = 1;
     }
 
     /**
