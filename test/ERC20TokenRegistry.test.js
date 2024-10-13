@@ -13,7 +13,7 @@ describe("ERC20TokenRegistry", function () {
 
     ERC20TokenRegistry = await ethers.getContractFactory("ERC20TokenRegistry");
     registry = await upgrades.deployProxy(ERC20TokenRegistry, [], { kind: 'uups' });
-    await registry.deployed();
+    await registry.waitForDeployment();
   });
 
   describe("Deployment", function () {
