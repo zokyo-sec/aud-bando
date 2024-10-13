@@ -15,4 +15,4 @@ jobs:
         with:
           node-version: '20.x'
       - name: Run Test Suite with Coverage
-        run: yarn hardhat coverage
+        run: yarn && yarn hardhat coverage
