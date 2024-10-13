@@ -1,4 +1,4 @@
-name: Run Hardhat Tests and Coverage
+name: Run Tests and Coverage
 on:
   push:
     branches: [main]
@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
       - name: Install packages
         uses: actions/setup-node@v3
         with:
