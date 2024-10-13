@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: MIT
-// Inspired in:
-// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 
 pragma solidity >=0.8.20 <0.9.0;
 
@@ -12,19 +10,17 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "./IBandoFulfillable.sol";
 import "./periphery/registry/FulfillableRegistry.sol";
 
-/**
- * @title BandoFulfillableV1
- * @dev Base escrow contract, holds funds designated for a beneficiary until they
- * withdraw them or a refund is emitted.
- *
- * Intended usage: This contract (and derived escrow contracts) should be a
- * standalone contract, that only interacts with the contract that instantiated
- * it. That way, it is guaranteed that all Ether will be handled according to
- * the `Escrow` rules, and there is no need to check for payable functions or
- * transfers in the inheritance tree. The contract that uses the escrow as its
- * payment method should be its owner, and provide public methods redirecting
- * to the escrow's deposit and withdraw.
- */
+/// Inspired in:
+/// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
+/// @title BandoFulfillableV1
+/// @dev Base escrow contract, holds funds designated for a beneficiary until they
+/// withdraw them or a refund is emitted.
+///
+/// Intended usage: 
+/// This contract (and derived escrow contracts) should only be
+/// interacted through the router or manager contracts. 
+/// The contract that uses the escrow as its payment method 
+/// should provide public methods redirecting to the escrow's deposit and withdraw.
 contract BandoFulfillableV1 is
     IBandoFulfillable,
     UUPSUpgradeable,
@@ -61,12 +57,18 @@ contract BandoFulfillableV1 is
     // The protocol manager address
     address public _manager;
 
-    // The protocol router address
+    /// @dev The protocol router address
     address public _router;
 
+    /// @dev The address of the fulfillable registry. Used to fetch service details.
     address public _fulfillableRegistry;
 
+    /// @dev The registry contract instance.
     FulfillableRegistry private _registryContract;
+
+    /// @dev The releaseable pool to be withdrawn by the beneficiaries in wei.
+    /// serviceID => releaseablePoolAmount
+    mapping (uint256 => uint256) public _releaseablePool;
 
     /// Mapping to store native coin refunds and deposit amounts
     /// @dev serviceID => userAddress => depositedAmount
@@ -120,19 +122,42 @@ contract BandoFulfillableV1 is
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = FulfillableRegistry(fulfillableRegistry_);
     }
-
+    /**
+     * @dev Retrieves the total deposits for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @return amount The total amount of deposits for the given payer and service ID.
+     */
     function getDepositsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
         amount = _deposits[serviceID][payer];
     }
 
+    /**
+     * @dev Sets the total deposits for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @param amount The amount of deposits to set.
+     */
     function setDepositsFor(address payer, uint256 serviceID, uint256 amount) internal {
         _deposits[serviceID][payer] = amount;
     }
 
+    /**
+     * @dev Retrieves the total refunds authorized for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @return amount The total amount of refunds authorized for the given payer and service ID.
+     */
     function getRefundsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
         amount = _authorized_refunds[serviceID][payer];
     }
 
+    /**
+     * @dev Sets the total refunds authorized for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @param amount The amount of refunds to set.
+     */
     function setRefundsFor(address payer, uint256 serviceID, uint256 amount) internal {
         _authorized_refunds[serviceID][payer] = amount;
     }
@@ -328,16 +353,11 @@ contract BandoFulfillableV1 is
         } else if (fulfillment.status != FulFillmentResultState.SUCCESS) {
             revert("Unexpected status");
         } else {
-            (bool rlsuccess, uint256 releaseResult) = service
-                .releaseablePool
-                .tryAdd(total_amount);
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(total_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
             (bool dsuccess, uint256 subResult) = deposits.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
-            _registryContract.updateServiceReleaseablePool(
-                serviceID,
-                releaseResult
-            );
+            _releaseablePool[serviceID] = releaseResult;
             setDepositsFor(payer, serviceID, subResult);
             _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment
                 .receiptURI;
@@ -355,8 +375,9 @@ contract BandoFulfillableV1 is
     function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
         require(_manager == msg.sender, "Caller is not the manager");
         Service memory service = _registryContract.getService(serviceID);
-        require(service.releaseablePool > 0, "There is no balance to release.");
-        _registryContract.updateServiceReleaseablePool(serviceID, 0);
-        service.beneficiary.sendValue(service.releaseablePool);
+        require(_releaseablePool[serviceID] > 0, "There is no balance to release.");
+        uint256 amount = _releaseablePool[serviceID];
+        _releaseablePool[serviceID] = 0;
+        service.beneficiary.sendValue(amount);
     }
 }

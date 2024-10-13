@@ -94,17 +94,6 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
     }
 
     /**
-     * @notice updateServiceReleaseablePool
-     * @dev Updates the releaseable pool of a service.
-     * @param serviceId the service identifier
-     * @param newReleaseablePool the new releaseable pool amount
-     */
-    function updateServiceReleaseablePool(uint256 serviceId, uint256 newReleaseablePool) external {
-        require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
-        _serviceRegistry[serviceId].releaseablePool = newReleaseablePool;
-    }
-
-    /**
      * @notice updateServiceFulfiller
      * @dev Updates the fulfiller of a service.
      * @param serviceId the service identifier

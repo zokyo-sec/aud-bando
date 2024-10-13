@@ -19,7 +19,6 @@ struct Service {
     uint256 serviceId;
     address payable beneficiary;
     uint256 feeAmount;
-    uint256 releaseablePool;
     address fulfiller;
 }
 
@@ -75,14 +74,6 @@ interface IFulfillableRegistry {
      * @param newFeeAmount the new fee amount
      */
     function updateServiceFeeAmount(uint256 serviceId, uint256 newFeeAmount) external;
-
-    /**
-     * @notice updateServiceReleaseablePool
-     * @dev Updates the releaseable pool of a service.
-     * @param serviceId the service identifier
-     * @param newReleaseablePool the new releaseable pool amount
-     */
-    function updateServiceReleaseablePool(uint256 serviceId, uint256 newReleaseablePool) external;
 
     /**
      * @notice updateServiceFulfiller

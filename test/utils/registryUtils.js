@@ -6,7 +6,6 @@ const DUMMY_SERVICE = {
   serviceId: 1,
   beneficiary: DUMMY_ADDRESS,
   feeAmount: 100,
-  releaseablePool: 1000,
   fulfiller: DUMMY_ADDRESS
 };
 
@@ -14,7 +13,6 @@ const DUMMY_SERVICE_2 = {
   serviceId: 2,
   beneficiary: DUMMY_ADDRESS,
   feeAmount: 200,
-  releaseablePool: 2000,
   fulfiller: DUMMY_ADDRESS
 };
 
@@ -22,7 +20,6 @@ const DUMMY_SERVICE_3 = {
   serviceId: 3,
   beneficiary: DUMMY_ADDRESS,
   feeAmount: 300,
-  releaseablePool: 3000,
   fulfiller: DUMMY_ADDRESS
 };
 

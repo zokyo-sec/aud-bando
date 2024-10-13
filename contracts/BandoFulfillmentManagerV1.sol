@@ -10,32 +10,30 @@ import './BandoERC20FulfillableV1.sol';
 import './BandoFulfillableV1.sol';
 import './FulfillmentTypes.sol';
 
-/**
- * @title BandoFulfillmentManager
- * 
- * This contract manages services and fulfillables for the Bando protocol.
- * It inherits from OwnableUpgradeable and UUPSUpgradeable contracts.
- * 
- * OwnableUpgradeable provides basic access control functionality, 
- * where only the contract owner can perform certain actions.
- * 
- * UUPSUpgradeable enables the contract to be upgraded without 
- * losing its state, allowing for seamless upgrades of the 
- * contract's implementation logic.
- * 
- * The purpose pf this contract is to interact with the FulfillableRegistry
- * and the BandoFulfillable contracts to perform the following actions:
- * 
- * - Set up a service escrow address and validator address.
- * - Register a fulfillment result for a service.
- * - Withdraw a refund from a service.
- * - Withdraw funds for a beneficiary in a releasable pool.
- * 
- * The owner of the contract is the operator of the fulfillment protocol.
- * But the fulfillers are the only ones that can register a fulfillment result 
- * and withdraw a refund.
- * 
- */
+
+/// @title BandoFulfillmentManagerV1
+/// 
+/// This contract manages services and fulfillables for the Bando protocol.
+/// It inherits from OwnableUpgradeable and UUPSUpgradeable contracts.
+/// 
+/// OwnableUpgradeable provides basic access control functionality, 
+/// where only the contract owner can perform certain actions.
+/// 
+/// UUPSUpgradeable enables the contract to be upgraded without 
+/// losing its state, allowing for seamless upgrades of the 
+/// contract's implementation logic.
+/// 
+/// The purpose of this contract is to interact with the FulfillableRegistry
+/// and the BandoFulfillable contracts to perform the following actions:
+/// 
+/// - Set up a service escrow address and validator address.
+/// - Register a fulfillment result for a service.
+/// - Withdraw a refund from a service.
+/// - Withdraw funds for a beneficiary in a releasable pool.
+/// 
+/// The owner of the contract is the operator of the fulfillment protocol.
+/// But the fulfillers are the only ones that can register a fulfillment result 
+/// and withdraw a refund.
 contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable {
 
     address public _serviceRegistry;
@@ -108,7 +106,6 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
             serviceId: serviceID,
             fulfiller: fulfiller,
             feeAmount: feeAmount,
-            releaseablePool: 0,
             beneficiary: beneficiary
         });
         IFulfillableRegistry(_serviceRegistry).addService(serviceID, service);
