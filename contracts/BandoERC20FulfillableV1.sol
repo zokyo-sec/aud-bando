@@ -24,7 +24,7 @@ import "./periphery/registry/FulfillableRegistry.sol";
 /// transfers in the inheritance tree. The contract that uses the escrow as its
 /// payment method should be its owner, and provide public methods redirecting
 /// to the escrow's deposit and withdraw.
-/// @custom:bandofp-version 1.0.0
+/// @custom:bfp-version 1.0.0
 contract BandoERC20FulfillableV1 is
     IBandoERC20Fulfillable,
     UUPSUpgradeable,
