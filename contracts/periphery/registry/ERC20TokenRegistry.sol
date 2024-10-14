@@ -7,6 +7,36 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 /// @title ERC20TokenRegistry
 /// @notice A contract for managing a whitelist of ERC20 tokens
 /// @dev This contract is upgradeable and uses the UUPS proxy pattern
+/// @title ERC20TokenRegistry
+/// @author g6s
+/// @notice This contract manages a whitelist of ERC20 tokens for the Bando Protocol
+/// @dev Implements an upgradeable contract using the UUPS proxy pattern
+///
+/// @notice For Auditors:
+/// 1. Access Control:
+///    - The contract inherits from OwnableUpgradeable, restricting critical functions to the owner
+///    - Token addition and removal are owner-only operations
+///
+/// 2. State Management:
+///    - Whitelist status is stored in a private mapping (address => bool)
+///    - No direct state-changing functions are exposed to non-owners
+///
+/// 3. Upgradeability:
+///    - Uses the UUPS (Universal Upgradeable Proxy Standard) pattern
+///    - The _authorizeUpgrade function is properly overridden and restricted to the owner
+///
+/// 4. Events:
+///    - TokenAdded and TokenRemoved events are emitted for off-chain tracking of whitelist changes
+///
+/// 5. Input Validation:
+///    - Zero address checks are implemented in the addToken function
+///    - Duplicate additions and removals are prevented with require statements
+///
+/// 6. View Functions:
+///    - isTokenWhitelisted allows public querying of a token's whitelist status
+///
+/// Key Security Considerations:
+/// - Check for potential issues with gas limits if a large number of tokens are added/removed in a single transaction
 contract ERC20TokenRegistry is OwnableUpgradeable, UUPSUpgradeable {
     /* 
      * Mapping to store the whitelist status of tokens
