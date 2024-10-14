@@ -52,7 +52,7 @@ library FulfillmentRequestLib {
       ERC20FulFillmentRequest memory request,
       address fulfillableRegistry
     ) internal view returns (Service memory) {
-        if (msg.value == 0) {
+        if (request.tokenAmount == 0) {
             revert InsufficientAmount();
         }
         if (request.fiatAmount == 0) {
@@ -63,15 +63,6 @@ library FulfillmentRequestLib {
         
         if (!FulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
-        }
-        
-        (bool success, uint256 total_amount) = request.tokenAmount.tryAdd(service.feeAmount);
-        if (!success) {
-            revert OverflowError();
-        }
-        
-        if (msg.value != total_amount) {
-            revert AmountMismatch();
         }
 
         return service;
