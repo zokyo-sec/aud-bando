@@ -16,9 +16,36 @@ describe("ERC20TokenRegistry", function () {
     await registry.waitForDeployment();
   });
 
-  describe("Deployment", function () {
+  describe("Configuration Specs", function () {
     it("Should set the right owner", async function () {
       expect(await registry.owner()).to.equal(owner.address);
+    });
+  });
+
+  describe("Access Control", function () {
+    it("Should not allow non-owner to add token", async function () {
+      await expect(registry.connect(addr1).addToken(addr2.address))
+        .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
+    });
+
+    it("Should not allow non-owner to remove token", async function () {
+      await registry.addToken(addr2.address);
+      await expect(registry.connect(addr1).removeToken(addr2.address))
+        .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
+    });
+  });
+
+  describe("Upgradeability", function () {
+    it("Should allow owner to upgrade", async function () {
+      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry");
+      await expect(upgrades.upgradeProxy(await registry.getAddress(), ERC20TokenRegistryV2))
+        .to.not.be.reverted;
+    });
+
+    it("Should not allow non-owner to upgrade", async function () {
+      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry", addr1);
+      await expect(upgrades.upgradeProxy(await registry.getAddress(), ERC20TokenRegistryV2))
+        .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
     });
   });
 
@@ -48,7 +75,7 @@ describe("ERC20TokenRegistry", function () {
     });
 
     it("Should not allow adding zero address", async function () {
-      await expect(registry.addToken(ethers.constants.AddressZero))
+      await expect(registry.addToken(ethers.ZeroAddress))
         .to.be.revertedWith("ERC20TokenRegistry: Token address cannot be zero");
     });
 
@@ -61,33 +88,6 @@ describe("ERC20TokenRegistry", function () {
     it("Should not allow removing non-whitelisted token", async function () {
       await expect(registry.removeToken(addr1.address))
         .to.be.revertedWith("ERC20TokenRegistry: Token not whitelisted");
-    });
-  });
-
-  describe("Access Control", function () {
-    it("Should not allow non-owner to add token", async function () {
-      await expect(registry.connect(addr1).addToken(addr2.address))
-        .to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("Should not allow non-owner to remove token", async function () {
-      await registry.addToken(addr2.address);
-      await expect(registry.connect(addr1).removeToken(addr2.address))
-        .to.be.revertedWith("Ownable: caller is not the owner");
-    });
-  });
-
-  describe("Upgradeability", function () {
-    it("Should allow owner to upgrade", async function () {
-      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry");
-      await expect(upgrades.upgradeProxy(registry.address, ERC20TokenRegistryV2))
-        .to.not.be.reverted;
-    });
-
-    it("Should not allow non-owner to upgrade", async function () {
-      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry", addr1);
-      await expect(upgrades.upgradeProxy(registry.address, ERC20TokenRegistryV2))
-        .to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 });
