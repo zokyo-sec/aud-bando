@@ -13,7 +13,6 @@ describe('BandoFulfillmentManagerV1', () => {
     let router;
     let registry;
     let manager;
-    let managerEOA;
 
     const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
 
@@ -255,6 +254,21 @@ describe('BandoFulfillmentManagerV1', () => {
             await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits('1000', 'wei'));
             const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
             expect(postBalance).to.be.equal(1000);
+        });
+    });
+
+    describe('Withdraw ERC20 Refunds', () => {
+        it('should not allow an address with no ERC20 refunds', async () => {
+            await expect(manager.withdrawERC20Refund(1, DUMMY_ADDRESS, await beneficiary.getAddress()))
+                .to.be.revertedWith("Address is not allowed any refunds");
+        });
+
+        it('should allow manager to withdraw an ERC20 refund', async () => {
+            const refunds = await erc20_escrow.getERC20RefundsFor(await owner.getAddress(), 1);
+            expect(refunds.toString()).to.be.equal("1000");
+            const r = await manager.withdrawERC20Refund(1, DUMMY_ADDRESS, await owner.getAddress());
+            await expect(r).not.to.be.reverted;
+            await expect(r).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(DUMMY_ADDRESS, await owner.getAddress(), ethers.parseUnits('1000', 18));
         });
     });
 });
