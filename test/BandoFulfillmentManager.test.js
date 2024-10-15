@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 const eth = require('ethers');
 const { setupRegistry } = require('./utils/registryUtils');
+const BN = require('bn.js')
 
 describe('BandoFulfillmentManagerV1', () => {
     let owner;
@@ -12,11 +13,13 @@ describe('BandoFulfillmentManagerV1', () => {
     let router;
     let registry;
     let manager;
+    let managerEOA;
 
     const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
 
     before(async () => {
-        [owner, validator, fulfiller, beneficiary, router] = await ethers.getSigners();
+        [owner, mng, fulfiller, validator, beneficiary] = await ethers.getSigners();
+        managerEOA = mng;
         /**
          * deploy registry
          */
@@ -42,19 +45,31 @@ describe('BandoFulfillmentManagerV1', () => {
         erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
 
         /**
+         * deploy router
+         */
+        const BandoRouterV1 = await ethers.getContractFactory('BandoRouterV1');
+        routerContract = await upgrades.deployProxy(BandoRouterV1, []);
+        await routerContract.waitForDeployment();
+        router = BandoRouterV1.attach(await routerContract.getAddress());
+
+        /**
          * configure protocol state vars.
          */
         const feeAmount = ethers.parseUnits('0.1', 'ether');
         await escrow.setManager(await manager.getAddress());
         await escrow.setFulfillableRegistry(registryAddress);
-        await escrow.setRouter(DUMMY_ADDRESS);
+        await escrow.setRouter(await router.getAddress());
         await erc20_escrow.setManager(await manager.getAddress());
         await erc20_escrow.setFulfillableRegistry(registryAddress);
-        await erc20_escrow.setRouter(DUMMY_ADDRESS);
+        await erc20_escrow.setRouter(await router.getAddress());
         await registry.setManager(await manager.getAddress());
         await manager.setServiceRegistry(registryAddress);
         await manager.setEscrow(await escrow.getAddress());
         await manager.setERC20Escrow(await erc20_escrow.getAddress());
+        await router.setFulfillableRegistry(registryAddress);
+        await router.setTokenRegistry(DUMMY_ADDRESS);
+        await router.setEscrow(await escrow.getAddress());
+        await router.setERC20Escrow(await erc20_escrow.getAddress());
     });
 
     describe('configuration', () => {
@@ -97,10 +112,10 @@ describe('BandoFulfillmentManagerV1', () => {
         });
     });
 
-    describe('setService', () => {
+    describe('Set Service', () => {
         it('should set up a service', async () => {
             const serviceID = 1;
-            const feeAmount = ethers.parseUnits('0.1', 'ether');
+            const feeAmount = ethers.parseUnits('0', 'ether');
 
             // Set up the service
             const result = await manager.setService(
@@ -149,11 +164,87 @@ describe('BandoFulfillmentManagerV1', () => {
             )).to.be.revertedWith('FulfillableRegistry: Service already exists');
         });
 
-        // Add more test cases for different scenarios
+        // TODO: Add more test cases for different scenarios
         it('should add a service ref', async () => {
             const serviceID = 1;
             const serviceRef = "012345678912";
             const result = await manager.setServiceRef(serviceID, serviceRef);
+        });
+    });
+
+    describe("Register Fulfillments", () => {
+        it("should only allow to register a fulfillment via the manager", async () => {
+            const serviceID = 1;
+            // Set up the fulfillment request
+            const fulfillmentRequest = {
+                payer: await owner.getAddress(),
+                fiatAmount: "1000",
+                serviceRef: "012345678912",
+                weiAmount: ethers.parseUnits('1000', 'wei'),
+            };
+            const weiAmount = new BN(fulfillmentRequest.weiAmount);
+            // Request the service through the router
+            await router.requestService(serviceID, fulfillmentRequest, { value: weiAmount.toString() });
+            const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: payerRecordIds[0],
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            await expect(
+                escrow.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
+            ).to.be.revertedWith('Caller is not the manager');
+            await expect(
+                manager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
+            ).not.to.be.reverted;
+            record = await escrow.record(payerRecordIds[0]);
+            expect(record[10]).to.be.equal(1);
+        });
+
+        it("should not allow to register a fulfillment with an invalid status.", async () => {
+            // Set up the fulfillment request
+            const fulfillmentRequest = {
+                payer: await owner.getAddress(),
+                fiatAmount: "1000",
+                serviceRef: "012345678912",
+                weiAmount: ethers.parseUnits('1000', 'wei'),
+            };
+            const weiAmount = new BN(fulfillmentRequest.weiAmount);
+            // Request the service through the router
+            await router.requestService(1, fulfillmentRequest, { value: weiAmount.toString() });
+            const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+            const INVALID_FULFILLMENT_RESULT = {
+                id: payerRecordIds[1],
+                status: 3,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            await expect(
+                manager.registerFulfillment(1, INVALID_FULFILLMENT_RESULT)
+            ).to.be.reverted;
+        });
+
+        it("should authorize a refund after register a fulfillment with a failed status.", async () => {
+            const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+            const FAILED_FULFILLMENT_RESULT = {
+                id: payerRecordIds[1],
+                status: 0,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const r = await manager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+            await expect(r).not.to.be.reverted;
+            await expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(await owner.getAddress(), ethers.parseUnits('1000', 'wei'));
+            const record = await escrow.record(payerRecordIds[1]);
+            expect(record[10]).to.be.equal(0);
+        });
+    });
+
+    describe('Withdraw Refunds', () => {
+        it('should not allow an address with no refunds', async () => {
+            await expect(manager.withdrawRefund(1, await beneficiary.getAddress()))
+                .to.be.revertedWith("Address is not allowed any refunds");
         });
     });
 });

@@ -86,7 +86,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
      * 
      * The validator address is intended to be a contract that validates the service's
      * identifier. eg. phone number, bill number, etc.
-     * @return address[2]
+     * @return Service memory
      */
     function setService(
         uint256 serviceID,

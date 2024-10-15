@@ -261,7 +261,7 @@ describe("BandoRouterV1", function () {
 
   describe("ERC20 Route to service", async () => {
     it("should fail when service id is not set in registry", async () => {
-        const v2Signer1 = v2.connect(beneficiary)
+        const v2Signer1 = v2.connect(beneficiary);
         await expect(
           v2Signer1.requestERC20Service(2, DUMMY_ERC20_FULFILLMENTREQUEST)
         ).to.be.revertedWith('FulfillableRegistry: Service does not exist');
@@ -279,11 +279,22 @@ describe("BandoRouterV1", function () {
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
         const v2Fulfiller = v2.connect(fulfiller);
         const ercFulfiller = erc20Test.connect(fulfiller);
-        await ercFulfiller.approve(await erc20_escrow.getAddress(), 1000);
+        await ercFulfiller.approve(await erc20_escrow.getAddress(), 100);
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 100;
         await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
           .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientBalance')
           .withArgs(await fulfiller.getAddress(), 0, 100);
+    });
+
+    it("should fail when payer has not enough token allowance", async () => {
+        DUMMY_VALID_ERC20_FULFILLMENTREQUEST.payer = await fulfiller.getAddress();
+        DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
+        DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 1000;
+        const v2Fulfiller = v2.connect(fulfiller);
+        //await erc20Test.transfer(await fulfiller.getAddress(), 100);
+        await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
+          .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientAllowance')
+          .withArgs(await erc20_escrow.getAddress(), 100, 1000);
     });
 
     it("should fail with invalid Ref", async () => {
