@@ -246,5 +246,15 @@ describe('BandoFulfillmentManagerV1', () => {
             await expect(manager.withdrawRefund(1, await beneficiary.getAddress()))
                 .to.be.revertedWith("Address is not allowed any refunds");
         });
+
+        it('should allow manager to withdraw a refund', async () => {
+            const refunds = await escrow.getRefundsFor(await owner.getAddress(), 1);
+            expect(refunds.toString()).to.be.equal("1000");
+            const r = await manager.withdrawRefund(1, await owner.getAddress());
+            await expect(r).not.to.be.reverted;
+            await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits('1000', 'wei'));
+            const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
+            expect(postBalance).to.be.equal(1000);
+        });
     });
 });
