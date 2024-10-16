@@ -45,13 +45,14 @@ describe("ERC20TokenRegistry", function () {
     it("Should not allow non-owner to upgrade", async function () {
       const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry", addr1);
       await expect(upgrades.upgradeProxy(await registry.getAddress(), ERC20TokenRegistryV2))
-        .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
+      .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
     });
   });
 
   describe("Token Management", function () {
     it("Should add a token to the whitelist", async function () {
-      await registry.addToken(addr1.address);
+      await expect(registry.addToken(addr1.address))
+        .to.emit(registry, "TokenAdded");
       expect(await registry.isTokenWhitelisted(addr1.address)).to.be.true;
     });
 
@@ -91,4 +92,3 @@ describe("ERC20TokenRegistry", function () {
     });
   });
 });
-

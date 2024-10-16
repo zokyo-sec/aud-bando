@@ -47,7 +47,7 @@ library FulfillmentRequestLib {
         return service;
     }
 
-    function validateRequest(
+    function validateERC20Request(
       uint256 serviceID,
       ERC20FulFillmentRequest memory request,
       address fulfillableRegistry

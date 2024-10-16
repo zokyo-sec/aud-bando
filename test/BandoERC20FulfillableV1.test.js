@@ -1,7 +1,7 @@
 const { expect, assert } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 const { v4: uuidv4 } = require('uuid');
-const { setDummyServices, setupRegistry } = require('./utils/registryUtils');
+const { setupRegistry } = require('./utils/registryUtils');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 
