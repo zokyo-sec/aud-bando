@@ -36,12 +36,12 @@ describe('BandoFulfillableRegistry', () => {
             const feeAmount = ethers.parseUnits('0.1', 'ether');
 
             // Set up the service
-            const result = await manager.setService(
-                serviceID,
-                feeAmount,
-                DUMMY_ADDRESS, //Fulfiller
-                DUMMY_ADDRESS, //beneficiary
-            );
+            await expect(manager.setService(
+              serviceID,
+              feeAmount,
+              DUMMY_ADDRESS, //Fulfiller
+              DUMMY_ADDRESS, //beneficiary
+            )).to.emit(registry, 'ServiceAdded');
 
             // Retrieve the service details from the registry
             const service = await registry.getService(serviceID);
@@ -52,7 +52,7 @@ describe('BandoFulfillableRegistry', () => {
             expect(service.feeAmount).to.equal(feeAmount);
 
             // Verify the ServiceAdded event
-            expect(result).to.emit(manager, 'ServiceAdded').withArgs(serviceID, result[0], DUMMY_ADDRESS, DUMMY_ADDRESS);
+            //await expect(result).not.to.emit(registry, 'ServiceAdded')//.withArgs(serviceID, result[0], DUMMY_ADDRESS, DUMMY_ADDRESS);
 
         });
 

@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.20 <0.9.0;
 
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import './IFulfillableRegistry.sol';
+import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { IFulfillableRegistry, Service } from './IFulfillableRegistry.sol';
 
 /// @title FulfillableRegistry
 /// @author g6s
 /// @notice A registry for fulfillable services
 /// @dev This contract is upgradeable, Ownable, and uses UUPSUpgradeable
+/// @custom:bfp-version 1.0.0
 contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
 
-    // Mapping to store services by their ID
+    /// @notice Mapping to store services by their ID
     mapping(uint256 => Service) public _serviceRegistry;
 
-    /// Mapping to store service references by service ID
+    /// @notice Mapping to store service references by service ID
     /// @dev serviceID => (index => reference)
     mapping(uint256 => mapping(uint256 => string)) public _serviceRefs;
 
@@ -22,29 +23,40 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
     /// @dev serviceID => reference count
     mapping(uint256 => uint256) public _serviceRefCount;
 
-    /// Mapping to store fulfillers and their associated services
+    /// @notice Mapping to store fulfillers and their associated services
     /// @dev fulfiller => (serviceId => exists)
     mapping(address => mapping(uint256 => bool)) public _fulfillerServices;
 
     /// @dev fulfiller => service count
     mapping(address => uint256) public _fulfillerServiceCount;
 
+    /// @dev The total number of services
     uint256 _serviceCount;
 
+    /// @dev The manager address
     address public _manager;
 
+    /// @notice ServiceAdded event
+    /// @param serviceID The service identifier
     event ServiceRemoved(uint256 serviceID);
+
+    /// @notice ServiceAdded event
+    /// @param serviceID The service identifier
+    /// @param fulfiller The fulfiller address
+    event ServiceAdded(uint256 serviceID, address indexed fulfiller);
 
     modifier onlyManager() {
         require(msg.sender == _manager, "FulfillableRegistry: Only the manager can call this function");
         _;
     }
 
+    /// @notice Initializes the contract
     function initialize() public virtual initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
     }
 
+    /// @dev UUPS upgrade authorization
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /**
@@ -68,6 +80,7 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
             'FulfillableRegistry: Service already exists'
         );
         _serviceRegistry[serviceId] = service;
+        emit ServiceAdded(serviceId, service.fulfiller);
         return true;
     }
 
@@ -151,7 +164,7 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
     }
 
     /**
-     * isRefValid
+     * @notice isRefValid
      * 
      * @param serviceId the service identifier
      * @param ref the reference to the service

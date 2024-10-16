@@ -1,30 +1,34 @@
 // SPDX-License-Identifier: MIT
-// Inspired in:
-// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 pragma solidity >=0.8.20 <0.9.0;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./IBandoERC20Fulfillable.sol";
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import "./periphery/registry/FulfillableRegistry.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IBandoERC20Fulfillable } from "./IBandoERC20Fulfillable.sol";
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import { Service, IFulfillableRegistry } from "./periphery/registry/IFulfillableRegistry.sol";
+import {
+    ERC20FulFillmentRecord,
+    ERC20FulFillmentRequest,
+    FulFillmentResultState,
+    FulFillmentResult
+} from "./FulfillmentTypes.sol";
 
 /// @title BandoERC20FulfillableV1
-/// @dev Base escrow contract, holds funds designated for a beneficiary until they
+/// @author g6s
+/// @custom:bfp-version 1.0.0
+/// @dev Inspired in: OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
+/// Base escrow contract, holds funds designated for a beneficiary until they
 /// withdraw them or a refund is emitted.
 ///
-/// Intended usage: This contract (and derived escrow contracts) should be a
+/// @notice Intended usage: This contract (and derived escrow contracts) should be a
 /// standalone contract, that only interacts with the contract that instantiated
 /// it. That way, it is guaranteed that all Ether will be handled according to
 /// the `Escrow` rules, and there is no need to check for payable functions or
-/// transfers in the inheritance tree. The contract that uses the escrow as its
-/// payment method should be its owner, and provide public methods redirecting
-/// to the escrow's deposit and withdraw.
-/// @custom:bfp-version 1.0.0
+/// transfers in the inheritance tree.
 contract BandoERC20FulfillableV1 is
     IBandoERC20Fulfillable,
     UUPSUpgradeable,
@@ -39,40 +43,55 @@ contract BandoERC20FulfillableV1 is
     /* EVENT DECLARATIONS */
     /**********************/
 
+    /// @notice Event emitted when a deposit is received.
+    /// @param record The fulfillment record.
     event ERC20DepositReceived(ERC20FulFillmentRecord record);
+
+    /// @notice Event emitted when a refund is withdrawn.
+    /// @param token The address of the token.
+    /// @param payee The address of the payee.
+    /// @param weiAmount The amount of wei to refund.
     event ERC20RefundWithdrawn(address token, address indexed payee, uint256 weiAmount);
+
+    /// @notice Event emitted when a refund is authorized.
+    /// @param payee The address of the payee.
+    /// @param weiAmount The amount of wei to refund.
     event ERC20RefundAuthorized(address indexed payee, uint256 weiAmount);
 
     /*****************************/
     /* STATE VARIABLES           */
     /*****************************/
 
-    /// Auto-incrementable id storage
+    /// @notice Auto-incrementable id storage
     uint256 private _fulfillmentIdCount;
 
-    /// All fulfillment records keyed by their ids
+    /// @notice All fulfillment records keyed by their ids
     mapping(uint256 => ERC20FulFillmentRecord) private _fulfillmentRecords;
 
-    /// Deposits mapped to subject addresses
+    /// @notice Deposits mapped to subject addresses
     mapping(address => uint256[]) private _fulfillmentRecordsForSubject;
 
-    /// Total deposits registered
+    /// @notice Total deposits registered
     uint256 private _fulfillmentRecordCount;
 
-    /// The amounts per token that is available to be released by the beneficiary.
-    mapping(address => uint256) private _releaseablePools;
+    /// @notice The amounts per token that is available to be released by the beneficiary.
+    /// @dev We must track the amount per service and token to allow for multiple services to be fulfilled.
+    /// @dev serviceID => tokenAddress => amount
+    mapping(uint256 => mapping(address => uint256)) private _releaseablePools;
 
+    /// @notice The fulfillable registry address.
     address public _fulfillableRegistry;
 
-    FulfillableRegistry private _registryContract;
+    /// @notice The registry contract instance.
+    IFulfillableRegistry private _registryContract;
 
-    /// The protocol manager address
+    /// @notice The protocol manager address
     address public _manager;
 
-    /// The protocol router address
+    /// @notice The protocol router address
     address public _router;
 
-    /// Mapping to store erc20 refunds and deposit amounts
+    /// @notice Mapping to store erc20 refunds and deposit amounts
     /// @dev serviceID => tokenAddress => userAddress => depositedAmount
     mapping(
         uint256 => mapping(address => mapping(address => uint256))
@@ -83,7 +102,8 @@ contract BandoERC20FulfillableV1 is
         uint256 => mapping(address => mapping(address => uint256))
     ) private _erc20_authorized_refunds;
 
-
+    /// @notice UUPS upgrade authorization
+    /// @param newImplementation The address of the new implementation.
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /*****************************/
@@ -117,7 +137,7 @@ contract BandoERC20FulfillableV1 is
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
         require(fulfillableRegistry_ != address(0), "Fulfillable registry address cannot be 0");
         _fulfillableRegistry = fulfillableRegistry_;
-        _registryContract = FulfillableRegistry(fulfillableRegistry_);
+        _registryContract = IFulfillableRegistry(fulfillableRegistry_);
     }
 
     /// @dev Returns the fulfillment records for a given payer.
@@ -338,11 +358,11 @@ contract BandoERC20FulfillableV1 is
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
             revert('Unexpected status');
         } else {
-            (bool rlsuccess, uint256 releaseResult) = _releaseablePools[token].tryAdd(total_amount);
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePools[serviceID][token].tryAdd(total_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
             (bool dsuccess, uint256 subResult) = depositsAmount.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
-            _releaseablePools[token] = releaseResult;
+            _releaseablePools[serviceID][token] = releaseResult;
             setERC20DepositsFor(
                 token,
                 _fulfillmentRecords[fulfillment.id].payer,
@@ -360,9 +380,9 @@ contract BandoERC20FulfillableV1 is
     /// Only the fulfiller of the service can withdraw the releaseable pool.
     function beneficiaryWithdraw(uint256 serviceID, address token) public virtual nonReentrant {
         require(_manager == msg.sender, "Caller is not the manager");
-        require(_releaseablePools[token] > 0, "There is no balance to release.");
+        require(_releaseablePools[serviceID][token] > 0, "There is no balance to release.");
         Service memory service = _registryContract.getService(serviceID);
-        _releaseablePools[token] = 0;
-        IERC20(token).safeTransfer(service.beneficiary, _releaseablePools[token]);
+        _releaseablePools[serviceID][token] = 0;
+        IERC20(token).safeTransfer(service.beneficiary, _releaseablePools[serviceID][token]);
     }
 }

@@ -2,21 +2,28 @@
 
 pragma solidity >=0.8.20 <0.9.0;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import "./IBandoFulfillable.sol";
-import "./periphery/registry/FulfillableRegistry.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import { IBandoFulfillable } from "./IBandoFulfillable.sol";
+import { IFulfillableRegistry, Service } from "./periphery/registry/FulfillableRegistry.sol";
+import {
+    FulFillmentRecord,
+    FulFillmentRequest,
+    FulFillmentResultState,
+    FulFillmentResult
+} from "./FulfillmentTypes.sol";
 
-/// Inspired in:
-/// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 /// @title BandoFulfillableV1
-/// @dev Base escrow contract, holds funds designated for a beneficiary until they
+/// @author g6s
+/// @custom:bfp-version 1.0.0
+/// @dev Inspired in: OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
+/// Base escrow contract, holds funds designated for a beneficiary until they
 /// withdraw them or a refund is emitted.
 ///
-/// Intended usage: 
+/// @notice Intended usage: 
 /// This contract (and derived escrow contracts) should only be
 /// interacted through the router or manager contracts. 
 /// The contract that uses the escrow as its payment method 
@@ -33,9 +40,23 @@ contract BandoFulfillableV1 is
     /* EVENT DECLARATIONS */
     /**********************/
 
+    /// @notice Event emitted when a deposit is received.
+    /// @param record The fulfillment record.
     event DepositReceived(FulFillmentRecord record);
+
+    /// @notice Event emitted when a refund is withdrawn.
+    /// @param payee Refundee address
+    /// @param weiAmount Wei amount to refund
     event RefundWithdrawn(address indexed payee, uint256 weiAmount);
+
+    /// @notice Event emitted when a refund is authorized.
+    /// @param payee Refundee address
+    /// @param weiAmount Wei amount to refund
     event RefundAuthorized(address indexed payee, uint256 weiAmount);
+
+    /// @notice Event emitted when a beneficiary withdraws funds.
+    /// @param serviceID The service identifier
+    /// @param amount The amount withdrawn
     event FeeUpdated(uint256 serviceID, uint256 amount);
 
     /*****************************/
@@ -64,7 +85,7 @@ contract BandoFulfillableV1 is
     address public _fulfillableRegistry;
 
     /// @dev The registry contract instance.
-    FulfillableRegistry private _registryContract;
+    IFulfillableRegistry private _registryContract;
 
     /// @dev The releaseable pool to be withdrawn by the beneficiaries in wei.
     /// serviceID => releaseablePoolAmount
@@ -88,6 +109,8 @@ contract BandoFulfillableV1 is
     /* FULFILLABLE ESCROW LOGIC  */
     /*****************************/
 
+    /// @notice Initializes the contract
+    /// @dev set counter to 1 to avoid 0 id
     function initialize() public virtual initializer {
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
@@ -95,95 +118,80 @@ contract BandoFulfillableV1 is
         _fulfillmentIdCount = 1;
     }
 
-    /**
-     * @dev Sets the protocol manager address.
-     * @param manager_ The address of the protocol manager.
-     */
+    /// @notice Sets the protocol manager address
+    /// @param manager_ The address of the protocol manager
+    /// @dev Only callable by the contract owner
     function setManager(address manager_) public onlyOwner {
         require(manager_ != address(0), "Manager cannot be the zero address");
         _manager = manager_;
     }
 
-    /**
-     * @dev Sets the protocol router address.
-     * @param router_ The address of the protocol router.
-     */
+    /// @notice Sets the protocol router address
+    /// @param router_ The address of the protocol router
+    /// @dev Only callable by the contract owner
     function setRouter(address router_) public onlyOwner {
         require(router_ != address(0), "Router cannot be the zero address");
         _router = router_;
     }
 
-    /**
-     * @dev Sets the fulfillable registry address.
-     * @param fulfillableRegistry_ The address of the fulfillable registry.
-     */
+    /// @notice Sets the fulfillable registry address
+    /// @param fulfillableRegistry_ The address of the fulfillable registry
+    /// @dev Only callable by the contract owner
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
         require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
         _fulfillableRegistry = fulfillableRegistry_;
-        _registryContract = FulfillableRegistry(fulfillableRegistry_);
+        _registryContract = IFulfillableRegistry(fulfillableRegistry_);
     }
-    /**
-     * @dev Retrieves the total deposits for a given payer and service ID.
-     * @param payer The address of the payer.
-     * @param serviceID The ID of the service.
-     * @return amount The total amount of deposits for the given payer and service ID.
-     */
+
+    /// @notice Retrieves the total deposits for a given payer and service ID
+    /// @param payer The address of the payer
+    /// @param serviceID The ID of the service
+    /// @return amount The total amount of deposits for the given payer and service ID
     function getDepositsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
         amount = _deposits[serviceID][payer];
     }
 
-    /**
-     * @dev Sets the total deposits for a given payer and service ID.
-     * @param payer The address of the payer.
-     * @param serviceID The ID of the service.
-     * @param amount The amount of deposits to set.
-     */
+    /// @notice Sets the total deposits for a given payer and service ID
+    /// @param payer The address of the payer
+    /// @param serviceID The ID of the service
+    /// @param amount The amount of deposits to set
     function setDepositsFor(address payer, uint256 serviceID, uint256 amount) internal {
         _deposits[serviceID][payer] = amount;
     }
 
-    /**
-     * @dev Retrieves the total refunds authorized for a given payer and service ID.
-     * @param payer The address of the payer.
-     * @param serviceID The ID of the service.
-     * @return amount The total amount of refunds authorized for the given payer and service ID.
-     */
+    /// @notice Retrieves the total refunds authorized for a given payer and service ID
+    /// @param payer The address of the payer
+    /// @param serviceID The ID of the service
+    /// @return amount The total amount of refunds authorized for the given payer and service ID
     function getRefundsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
         amount = _authorized_refunds[serviceID][payer];
     }
 
-    /**
-     * @dev Sets the total refunds authorized for a given payer and service ID.
-     * @param payer The address of the payer.
-     * @param serviceID The ID of the service.
-     * @param amount The amount of refunds to set.
-     */
+    /// @notice Sets the total refunds authorized for a given payer and service ID
+    /// @param payer The address of the payer
+    /// @param serviceID The ID of the service
+    /// @param amount The amount of refunds to set
     function setRefundsFor(address payer, uint256 serviceID, uint256 amount) internal {
         _authorized_refunds[serviceID][payer] = amount;
     }
 
-    /**
-     * recordsOf
-     * @dev Returns the fulfillment records for a given payer.
-     * @param payer the address of the payer
-     */
+    /// @notice Returns the fulfillment records for a given payer
+    /// @param payer The address of the payer
+    /// @return An array of fulfillment record IDs
     function recordsOf(address payer) public view returns (uint256[] memory) {
         return _fulfillmentRecordsForSubject[payer];
     }
 
-    /**
-     * @dev Returns the fulfillment record for a given id.
-     * @param id the id of the record
-     */
+    /// @notice Returns the fulfillment record for a given id
+    /// @param id The id of the record
+    /// @return The fulfillment record
     function record(uint256 id) public view returns (FulFillmentRecord memory) {
         return _fulfillmentRecords[id];
     }
 
-    /**
-     * @dev Stores the sent amount as credit to be claimed.
-     * @param fulfillmentRequest The fulfillment record to be stored.
-     *
-     */
+    /// @notice Deposits funds into the escrow.
+    /// @param serviceID The service identifier.
+    /// @param fulfillmentRequest The fulfillment request.
     function deposit(
         uint256 serviceID,
         FulFillmentRequest memory fulfillmentRequest
@@ -225,16 +233,13 @@ contract BandoFulfillableV1 is
         emit DepositReceived(fulfillmentRecord);
     }
 
-    /**
-     * @dev Refund accumulated balance for a refundee, forwarding all gas to the
-     * recipient.
-     *
-     * WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.
-     * Make sure you trust the recipient, or are either following the
-     * checks-effects-interactions pattern or using {ReentrancyGuard}.
-     *
-     * @param refundee The address whose funds will be withdrawn and transferred to.
-     */
+    /// @notice Withdraws the authorized refund.
+    /// @dev Refund accumulated balance for a refundee, forwarding all gas to the recipient.
+    /// WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.
+    /// Make sure you trust the recipient, or are either following the
+    /// checks-effects-interactions pattern or using {ReentrancyGuard}.
+    /// @param serviceID The service identifier.
+    /// @param refundee The address whose funds will be withdrawn and transferred to.
     function withdrawRefund(
         uint256 serviceID,
         address payable refundee
@@ -250,14 +255,11 @@ contract BandoFulfillableV1 is
         return true;
     }
 
-    /**
-     * @dev internal function to withraw.
-     * Should only be called when previously authorized.
-     *
-     * Will emit a RefundWithdrawn event on success.
-     *
-     * @param refundee The address to send the value to.
-     */
+    /// @notice Internal function to withdraw.
+    /// Should only be called when previously authorized.
+    /// Will emit a RefundWithdrawn event on success.
+    /// @param refundee The address to send the value to.
+    /// @param amount The amount to be withdrawn.
     function _withdrawRefund(
         address payable refundee,
         uint256 amount
@@ -266,12 +268,10 @@ contract BandoFulfillableV1 is
         emit RefundWithdrawn(refundee, amount);
     }
 
-    /**
-     * @dev Allows for refunds to take place.
-     *
-     * @param refundee the record to be
-     * @param weiAmount the amount to be authorized.
-     */
+    /// @notice Authorizes a refund for a given refundee.
+    /// @param serviceID The service identifier.
+    /// @param refundee The address whose funds will be authorized for refund.
+    /// @param weiAmount The amount of funds to authorize for refund.
     function _authorizeRefund(
         uint256 serviceID,
         address refundee,
@@ -305,23 +305,22 @@ contract BandoFulfillableV1 is
         emit RefundAuthorized(refundee, weiAmount);
     }
 
-    /**
-     * @dev The fulfiller registers a fulfillment.
-     *
-     * We need to verify the amount of the fulfillment is actually available to release.
-     * Then we can enrich the result with an auto-incremental unique ID.
-     * and the timestamp when the record get inserted.
-     *
-     * If the fulfillment has failed:
-     * - a refund will be authorized for a later withdrawal.
-     *
-     * If these verifications pass:
-     * - add the amount fulfilled to the release pool.
-     * - substract the amount from the payer's deposits.
-     * - update the FulFillmentRecord to the blockchain.
-     *
-     * @param fulfillment the fulfillment result attached to it.
-     */
+    /// @dev The fulfiller registers a fulfillment.
+    ///
+    /// We need to verify the amount of the fulfillment is actually available to release.
+    /// Then we can enrich the result with an auto-incremental unique ID.
+    /// and the timestamp when the record get inserted.
+    ///
+    /// If the fulfillment has failed:
+    /// - a refund will be authorized for a later withdrawal.
+    ///
+    /// If these verifications pass:
+    /// - add the amount fulfilled to the release pool.
+    /// - substract the amount from the payer's deposits.
+    /// - update the FulFillmentRecord to the blockchain.
+    ///
+    /// @param serviceID the service identifier.
+    /// @param fulfillment the fulfillment result attached to it.
     function registerFulfillment(
         uint256 serviceID,
         FulFillmentResult memory fulfillment
@@ -368,10 +367,8 @@ contract BandoFulfillableV1 is
         return true;
     }
 
-    /**
-     * @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
-     * Only the fulfiller of the service can withdraw the releaseable pool.
-     */
+    /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// @param serviceID The service identifier.
     function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
         require(_manager == msg.sender, "Caller is not the manager");
         Service memory service = _registryContract.getService(serviceID);
