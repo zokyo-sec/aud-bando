@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.20 <0.9.0;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title ERC20TokenRegistry
 /// @notice A contract for managing a whitelist of ERC20 tokens
@@ -11,8 +11,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 /// @author g6s
 /// @notice This contract manages a whitelist of ERC20 tokens for the Bando Protocol
 /// @dev Implements an upgradeable contract using the UUPS proxy pattern
-///
-/// @notice For Auditors:
+/// @custom:bfp-version 1.0.0
+/// @notice Considerations:
 /// 1. Access Control:
 ///    - The contract inherits from OwnableUpgradeable, restricting critical functions to the owner
 ///    - Token addition and removal are owner-only operations
@@ -44,8 +44,12 @@ contract ERC20TokenRegistry is OwnableUpgradeable, UUPSUpgradeable {
      */
     mapping(address => bool) private whitelist;
 
-    /* Events for token addition and removal */
+    /// @notice Emitted when a token is added to the whitelist
+    /// @param token The address of the token to check
     event TokenAdded(address indexed token);
+
+    /// @notice Emitted when a token is removed from the whitelist
+    /// @param token The address of the token to check
     event TokenRemoved(address indexed token);
 
     /// @notice Initializes the contract
@@ -73,7 +77,6 @@ contract ERC20TokenRegistry is OwnableUpgradeable, UUPSUpgradeable {
     function addToken(address token) public onlyOwner {
         require(token != address(0), "ERC20TokenRegistry: Token address cannot be zero");
         require(!whitelist[token], "ERC20TokenRegistry: Token already whitelisted");
-
         whitelist[token] = true;
         emit TokenAdded(token);
     }
@@ -83,7 +86,6 @@ contract ERC20TokenRegistry is OwnableUpgradeable, UUPSUpgradeable {
     /// @param token The address of the token to remove
     function removeToken(address token) public onlyOwner {
         require(whitelist[token], "ERC20TokenRegistry: Token not whitelisted");
-
         whitelist[token] = false;
         emit TokenRemoved(token);
     }

@@ -1,82 +1,109 @@
 // SPDX-License-Identifier: MIT
-// Inspired in:
-// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 
 pragma solidity >=0.8.20 <0.9.0;
     
-/**
-* enum with states for fulfillment results.
-*/
+/// @notice Enum with states for fulfillment results
 enum FulFillmentResultState {
     FAILED,
     SUCCESS,
     PENDING
 }
 
-/**
-* @dev The fulfiller will accept FulfillmentResults submitted to it,
-* and if valid, will persist them on-chain as FulfillmentRecords
-*/
+/// @notice The fulfiller will accept FulfillmentResults submitted to it,
+/// and if valid, will persist them on-chain as FulfillmentRecords
+/// @dev This struct represents a record of a fulfillment
 struct FulFillmentRecord {
-    uint256 id; // auto-incremental, generated in contract
-    string serviceRef; // identifier required to route the payment to the user's destination
+    /// @notice Auto-incremental ID generated in contract
+    uint256 id;
+    /// @notice Identifier required to route the payment to the user's destination
+    string serviceRef;
+    /// @notice Address of the fulfiller
     address fulfiller;
-    string externalID; // id coming from the fulfiller as proof.
-    address payer; // address of payer
-    uint256 weiAmount; // amount in wei
-    uint256 feeAmount; // feeAmount charged in wei
-    uint256 fiatAmount; // fiat amount to be charged for the fufillable
-    uint256 entryTime; // time at which the fulfillment was submitted
-    string receiptURI; // the fulfillment external receipt uri.
+    /// @notice ID coming from the fulfiller as proof
+    string externalID;
+    /// @notice Address of the payer
+    address payer;
+    /// @notice Amount in wei
+    uint256 weiAmount;
+    /// @notice Fee amount charged in wei
+    uint256 feeAmount;
+    /// @notice Fiat amount to be charged for the fulfillable
+    uint256 fiatAmount;
+    /// @notice Time at which the fulfillment was submitted
+    uint256 entryTime;
+    /// @notice The fulfillment external receipt URI
+    string receiptURI;
+    /// @notice Status of the fulfillment
     FulFillmentResultState status;
 }
 
-/**
-* @dev A fulfiller will submit a fulfillment result in this format.
-*/
+/// @notice A fulfiller will submit a fulfillment result in this format
+/// @dev This struct represents the result of a fulfillment
 struct FulFillmentResult {
-    uint256 id; // id of the fulfillment record.
-    string externalID; // id coming from the fulfiller as proof.
-    string receiptURI; // the fulfillment external receipt uri. 
+    /// @notice ID of the fulfillment record
+    uint256 id;
+    /// @notice ID coming from the fulfiller as proof
+    string externalID;
+    /// @notice The fulfillment external receipt URI
+    string receiptURI;
+    /// @notice Status of the fulfillment
     FulFillmentResultState status;   
 }
 
-/**
-* @dev The fulfiller will accept FulfillmentResults submitted to it,
-* and if valid, will persist them on-chain as FulfillmentRecords
-*/
+/// @notice The fulfiller will accept FulfillmentResults submitted to it,
+/// and if valid, will persist them on-chain as FulfillmentRecords
+/// @dev This struct represents a record of an ERC20 fulfillment
 struct ERC20FulFillmentRecord {
-    uint256 id; // auto-incremental, generated in contract
-    string serviceRef; // identifier required to route the payment to the user's destination
+    /// @notice Auto-incremental ID generated in contract
+    uint256 id;
+    /// @notice Identifier required to route the payment to the user's destination
+    string serviceRef;
+    /// @notice Address of the fulfiller
     address fulfiller;
-    address token; // address of the ERC20 token to be used for the payment
-    string externalID; // id coming from the fulfiller as proof.
-    address payer; // address of payer
-    uint256 tokenAmount; // amount
-    uint256 feeAmount; // feeAmount charged in N token
-    uint256 fiatAmount; // fiat amount to be charged for the fufillable
-    uint256 entryTime; // time at which the fulfillment was submitted
-    string receiptURI; // the fulfillment external receipt uri.
+    /// @notice Address of the ERC20 token to be used for the payment
+    address token;
+    /// @notice ID coming from the fulfiller as proof
+    string externalID;
+    /// @notice Address of the payer
+    address payer;
+    /// @notice Amount of tokens
+    uint256 tokenAmount;
+    /// @notice Fee amount charged in tokens
+    uint256 feeAmount;
+    /// @notice Fiat amount to be charged for the fulfillable
+    uint256 fiatAmount;
+    /// @notice Time at which the fulfillment was submitted
+    uint256 entryTime;
+    /// @notice The fulfillment external receipt URI
+    string receiptURI;
+    /// @notice Status of the fulfillment
     FulFillmentResultState status;
 }
 
-/**
-* @dev Anybody can submit a fulfillment request through a router.
-*/
+/// @notice Anybody can submit a fulfillment request through a router
+/// @dev This struct represents an ERC20 fulfillment request
 struct ERC20FulFillmentRequest {
-    address payer; // address of payer
-    uint256 fiatAmount; // fiat amount to be charged for the fufillable
-    string serviceRef; // identifier required to route the payment to the user's destination
-    address token; // address of the ERC20 token to be used for the payment
-    uint256 tokenAmount; // amount in wei
+    /// @notice Address of the payer
+    address payer;
+    /// @notice Fiat amount to be charged for the fulfillable
+    uint256 fiatAmount;
+    /// @notice Identifier required to route the payment to the user's destination
+    string serviceRef;
+    /// @notice Address of the ERC20 token to be used for the payment
+    address token;
+    /// @notice Amount of tokens
+    uint256 tokenAmount;
 }
 
-/**
-* @dev Anybody can submit a fulfillment request through a router.
-*/
+/// @notice Anybody can submit a fulfillment request through a router
+/// @dev This struct represents a fulfillment request
 struct FulFillmentRequest {
-    address payer; // address of payer
-    uint256 weiAmount; // amount in wei
-    uint256 fiatAmount; // fiat amount to be charged for the fufillable
-    string serviceRef; // identifier required to route the payment to the user's destination
+    /// @notice Address of the payer
+    address payer;
+    /// @notice Amount in wei
+    uint256 weiAmount;
+    /// @notice Fiat amount to be charged for the fulfillable
+    uint256 fiatAmount;
+    /// @notice Identifier required to route the payment to the user's destination
+    string serviceRef;
 }
