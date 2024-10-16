@@ -165,7 +165,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
-        require(IBandoERC20Fulfillable(_escrow).withdrawERC20Refund(serviceID, token, refundee), "Withdrawal failed");
+        require(IBandoERC20Fulfillable(_erc20_escrow).withdrawERC20Refund(serviceID, token, refundee), "Withdrawal failed");
     }
 
     /**
@@ -180,6 +180,6 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
         }
-        IBandoERC20Fulfillable(_escrow).registerFulfillment(serviceID, fulfillment);
+        IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, fulfillment);
     }
 }
