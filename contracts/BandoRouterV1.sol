@@ -123,7 +123,7 @@ contract BandoRouterV1 is
         uint256 serviceID, 
         ERC20FulFillmentRequest memory request
     ) public payable whenNotPaused nonReentrant returns (bool) {
-        FulfillmentRequestLib.validateRequest(serviceID, request, _fulfillableRegistry);
+        FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry);
         IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
         emit ERC20ServiceRequested(serviceID, request);
         return true;

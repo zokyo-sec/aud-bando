@@ -124,4 +124,20 @@ describe('BandoFulfillableRegistry', () => {
           expect(await registry.isRefValid(serviceID, serviceRef)).to.equal(true);
         });
     });
-  });
+
+    describe("update services", () => {
+      it("should allow an owner to update service properties", async () => {
+        const serviceID = 1;
+        const newFeeAmount = ethers.parseUnits('0.2', 'ether');
+        const newBeneficiary = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
+        const newFulfiller = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
+        await registry.updateServiceBeneficiary(serviceID, newBeneficiary);
+        await registry.updateServiceFeeAmount(serviceID, newFeeAmount);
+        await registry.updateServiceFulfiller(serviceID, newFulfiller);
+        const service = await registry.getService(serviceID);
+        expect(service.feeAmount).to.equal(newFeeAmount);
+        expect(service.fulfiller).to.equal(newFulfiller);
+        expect(service.beneficiary).to.equal(newBeneficiary);
+      });
+    });
+});
