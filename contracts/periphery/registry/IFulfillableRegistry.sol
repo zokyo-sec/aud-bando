@@ -1,15 +1,5 @@
-/**
- * SPDX-License-Identifier: MIT
- * This file is part of the FulfillableRegistry contract.
- * 
- * The FulfillableRegistry contract is a contract that can store the address of the contract that implements the fulfillable service.
- * The address can be retrieved by the serviceId.
- * 
- * The FulfillableRegistry contract is upgradeable.
- * The FulfillableRegistry contract is Ownable.
- * The FulfillableRegistry contract uses UUPSUpgradeable.
- * 
- */
+// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.8.20 <0.9.0;
 
 /**
@@ -22,10 +12,15 @@ struct Service {
     address fulfiller;
 }
 
-/**
- * @dev Interface for FulfillableRegistry
- * This interface is intented to be implemented by any contract that wants to be a fulfillable registry.
- */
+/// @title IFulfillableRegistry
+/// @dev Interface for FulfillableRegistry
+/// This interface is intended to be implemented by any contract that wants to be a fulfillable registry.
+/// The FulfillableRegistry contract is a contract that can store the address of the contract that implements the fulfillable service.
+/// The address can be retrieved by the serviceId.
+/// 
+/// The FulfillableRegistry contract is upgradeable.
+/// The FulfillableRegistry contract is Ownable.
+/// The FulfillableRegistry contract uses UUPSUpgradeable.
 interface IFulfillableRegistry {
 
     /// @notice Adds a new service to the registry.

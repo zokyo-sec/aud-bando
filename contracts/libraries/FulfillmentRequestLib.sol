@@ -4,19 +4,43 @@ pragma solidity ^0.8.20;
 import { FulFillmentRequest, ERC20FulFillmentRequest } from '../FulfillmentTypes.sol';
 import { Service, IFulfillableRegistry } from '../periphery/registry/IFulfillableRegistry.sol';
 import { FulfillableRegistry } from '../periphery/registry/FulfillableRegistry.sol';
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
+/// @title FulfillmentRequestLib
+/// @author g6s
+/// @notice FulfillmentRequestLib is a library that contains functions to validate fulfillment requests
+/// @dev This contract is used by BandoRouterV1
 library FulfillmentRequestLib {
     using Address for address payable;
     using Math for uint256;
 
+    /// @notice InsufficientAmount error message
+    /// It is thrown when the amount sent is zero
     error InsufficientAmount();
+
+    /// @notice InvalidFiatAmount error message
+    /// It is thrown when the fiat amount is zero
     error InvalidFiatAmount();
+
+    /// @notice InvalidRef error message
+    /// It is thrown when the service reference is not in the registry
     error InvalidRef();
+
+    /// @notice OverflowError error message
+    /// It is thrown when an overflow occurs
     error OverflowError();
+
+    /// @notice AmountMismatch error message
+    /// It is thrown when the amount sent does not match weiAmount + feeAmount
     error AmountMismatch();
 
+    /// @notice validateRequest
+    /// @dev It checks if the amount sent is greater than zero, if the fiat amount is greater than zero,
+    /// if the service reference is valid, if the amount sent matches the weiAmount + feeAmount and returns the service
+    /// @param serviceID the product/service ID
+    /// @param request a valid FulFillmentRequest
+    /// @param fulfillableRegistry the registry address
     function validateRequest(
         uint256 serviceID,
         FulFillmentRequest memory request,
@@ -47,6 +71,13 @@ library FulfillmentRequestLib {
         return service;
     }
 
+    /// @notice validateERC20Request
+    /// @dev It checks if the token amount sent is greater than zero, if the fiat amount is greater than zero,
+    /// if the service reference is valid and returns the service
+    /// @dev We will change the way we handle fees so this validation is prone to change.
+    /// @param serviceID the product/service ID
+    /// @param request a valid FulFillmentRequest
+    /// @param fulfillableRegistry the registry address
     function validateERC20Request(
       uint256 serviceID,
       ERC20FulFillmentRequest memory request,
