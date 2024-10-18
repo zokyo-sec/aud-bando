@@ -1,34 +1,48 @@
-# toppi-dapp
-Toppi's dApp.
+# Bando EVM Smart Contracts
 
+The Bando Fulfillment Protocol EVM smart contracts suite suite.
 
-## Starting Up 
+[![Run Tests and Coverage](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/hardhat-test.yaml/badge.svg)](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/hardhat-test.yaml)
 
-Utiliza 
-- Truffle 
-- ganache-cli
+## Overview 
+For a more detail view of the protocol architecture, security considerations, and product as a whole, please refer to the [Official Docs](https://docs.bando.cool).
 
+The project is a hybrid of hardhat and forge. 
+We run integration tests with hardhat and deploy and run other tests with forge.
 
-1. Install Truffle
+## Pre-requisites
+
+- Node.js v16.x
+- Foundry
+- Hardhat
+- Solidity 0.8.20
+
+## Installation
+
+Install dependencies with forge
+```shell
+forge install
 ```
-npm install -g truffle
+Install hardhat project dependencies
+```shell
+yarn install
 ```
-2. Instala los paquetes pendientes
+
+## Compile Contracts
+
+Compile contracts with forge
+```shell
+forge build [--sizes]
 ```
-npm install
+
+## Run Tests
+
+Run tests with hardhat
+```shell
+yarn hardhat test
 ```
-3. Instala Ganache
+
+Run coverage report with hardhat
+```shell
+yarn hardhat coverage
 ```
-npm install -g ganache-cli
-```
-4. Después de que todo este instalado 
-   5. Levanta ganache
-   ```
-   npm install -g ganache-cli
-   ```
-   6. Prendele Trufle
-    ``` 
-        truffle test
-        truffle migrate
-        npx truffle test 
-    ```
