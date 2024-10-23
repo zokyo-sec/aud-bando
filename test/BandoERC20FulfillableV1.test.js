@@ -9,7 +9,7 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   tokenAmount: 100,
   fiatAmount: 10,
-  serviceRef: "01234XYZ",
+  serviceRef: uuidv4(),
   token: ''
 }
  
@@ -41,6 +41,7 @@ let router;
 let erc20Test;
 let registryAddress;
 let manager;
+let routerContract;
 
 describe("BandoERC20FulfillableV1", () => {
   
@@ -49,9 +50,16 @@ describe("BandoERC20FulfillableV1", () => {
     erc20Test = await ethers.deployContract('DemoToken');
     await erc20Test.waitForDeployment();
 
-    // deploy the service registry
-    const registryInstance = await setupRegistry(owner);
+    /**
+    * deploy registries
+    */
+    const registryInstance = await setupRegistry(await owner.getAddress());
     registryAddress = await registryInstance.getAddress();
+    registry = registryInstance;
+    tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistry');
+    const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, []);
+    await tokenRegistryInstance.waitForDeployment();
+    tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
 
     // deploy manager
     const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
@@ -66,8 +74,15 @@ describe("BandoERC20FulfillableV1", () => {
       []
     );
     await fulfillableContract.waitForDeployment();
+    /**
+     * deploy router
+     */
+    const BandoRouterV1 = await ethers.getContractFactory('BandoRouterV1');
+    routerContract = await upgrades.deployProxy(BandoRouterV1, []);
+    await routerContract.waitForDeployment();
+    routerContract = BandoRouterV1.attach(await routerContract.getAddress());
 
-    await erc20Test.approve(await fulfillableContract.getAddress(), ethers.parseUnits('1000000', 18));
+    await erc20Test.approve(await routerContract.getAddress(), ethers.parseUnits('1000000', 18));
     escrow = FulfillableV1.attach(await fulfillableContract.getAddress())
     taddr = await erc20Test.getAddress();
     DUMMY_FULFILLMENTREQUEST.token = taddr;
@@ -75,11 +90,17 @@ describe("BandoERC20FulfillableV1", () => {
     await escrow.setManager(await manager.getAddress());
     await registryInstance.setManager(await manager.getAddress());
     await escrow.setFulfillableRegistry(registryAddress);
-    await escrow.setRouter(router.address);
+    await escrow.setRouter(await routerContract.getAddress());
     await manager.setServiceRegistry(registryAddress);
     await manager.setEscrow(DUMMY_ADDRESS);
     await manager.setERC20Escrow(await escrow.getAddress());
-    const service = await manager.setService(1, 0, fulfiller.address, beneficiary.address);
+    await routerContract.setFulfillableRegistry(registryAddress);
+    await routerContract.setTokenRegistry(await tokenRegistry.getAddress());
+    await routerContract.setEscrow(DUMMY_ADDRESS);
+    await routerContract.setERC20Escrow(await escrow.getAddress());
+    await manager.setService(1, 0, fulfiller.address, beneficiary.address);
+    await manager.setServiceRef(1, DUMMY_FULFILLMENTREQUEST.serviceRef);
+    await tokenRegistry.addToken(taddr);
   });
 
   describe("Configuration Specs", async () => {
@@ -95,7 +116,7 @@ describe("BandoERC20FulfillableV1", () => {
       expect(m).to.be.a.properAddress
       expect(r).to.be.a.properAddress
       expect(m).to.be.equal(await manager.getAddress())
-      expect(r).to.be.equal(await router.getAddress())
+      expect(r).to.be.equal(await routerContract.getAddress())
     });
   });
 
@@ -107,31 +128,36 @@ describe("BandoERC20FulfillableV1", () => {
     });
 
     it("should not allow a payable deposit from an unexistent service", async () => {
-      // TODO
+      DUMMY_FULFILLMENTREQUEST.payer = await owner.getAddress();
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits('1000', 18);
+      DUMMY_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
+      await expect(
+        routerContract.requestERC20Service(2, DUMMY_FULFILLMENTREQUEST)
+      ).to.be.revertedWith('FulfillableRegistry: Service does not exist');
     });
 
     it("should not allow a payable deposit from an unexistent token", async () => {
-      /*DUMMY_FULFILLMENTREQUEST.token = DUMMY_ADDRESS;
-      const asRouter = await escrow.connect(router);
+      DUMMY_FULFILLMENTREQUEST.payer = await owner.getAddress();
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits('1000', 18);
+      DUMMY_FULFILLMENTREQUEST.token = DUMMY_ADDRESS;
       await expect(
-        asRouter.depositERC20(1, DUMMY_FULFILLMENTREQUEST)
-      ).to.be.revertedWith('Token is not supported');
-      DUMMY_FULFILLMENTREQUEST.token = await erc20Test.getAddress();*/
+        routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
+      ).to.have.revertedWithCustomError(routerContract, 'UnsupportedToken')
+        .withArgs(DUMMY_ADDRESS);
     });
 
     it("should allow a payable deposit coming from the router.", async () => {
       DUMMY_FULFILLMENTREQUEST.payer = await owner.getAddress();
       DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits('1000', 18);
       DUMMY_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
-      const fromRouter = await escrow.connect(router);
-      const response = await fromRouter.depositERC20(1, DUMMY_FULFILLMENTREQUEST);
-      const BNresponse = await fromRouter.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
+      const response = await routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST);
+      const BNresponse = await escrow.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
       assert.equal(BNresponse.toString(), "1000000000000000000000");
       const erc20PostBalance = await erc20Test.balanceOf(await escrow.getAddress());
       expect(erc20PostBalance).to.be.equal("1000000000000000000000");
 
-      const response2 = await fromRouter.depositERC20(1, DUMMY_FULFILLMENTREQUEST);
-      const BNresponse2 = await fromRouter.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
+      const response2 = await routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST);
+      const BNresponse2 = await escrow.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
       assert.equal(BNresponse2.toString(), "2000000000000000000000");
       const erc20PostBalance2 = await erc20Test.balanceOf(await escrow.getAddress());
       expect(erc20PostBalance2).to.be.equal("2000000000000000000000");
@@ -142,7 +168,7 @@ describe("BandoERC20FulfillableV1", () => {
       DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("100", 18);
       const fromRouter = await escrow.connect(router);
       await expect(
-        fromRouter.depositERC20(1, DUMMY_FULFILLMENTREQUEST)
+        routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
       ).to.emit(escrow, "ERC20DepositReceived")
     });
 

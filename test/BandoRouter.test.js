@@ -58,10 +58,14 @@ describe("BandoRouterV1", function () {
     DUMMY_ERC20_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
     DUMMY_VALID_ERC20_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
     /**
-     * deploy registry
+     * deploy registries
      */
     registry = await setupRegistry(await owner.getAddress());
     const registryAddress = await registry.getAddress();
+    tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistry');
+    const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, []);
+    await tokenRegistryInstance.waitForDeployment();
+    tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
     /**
      * deploy router
      */
@@ -87,7 +91,7 @@ describe("BandoRouterV1", function () {
     const erc20 = await upgrades.deployProxy(ERC20Escrow, []);
     await erc20.waitForDeployment();
     erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
-    await erc20Test.approve(await erc20_escrow.getAddress(), 10000000000);
+    await erc20Test.approve(await routerContract.getAddress(), 10000000000);
 
     /**
      * configure protocol state vars.
@@ -104,19 +108,26 @@ describe("BandoRouterV1", function () {
     await manager.setEscrow(await escrow.getAddress());
     await manager.setERC20Escrow(await erc20_escrow.getAddress());
     await v1.setFulfillableRegistry(registryAddress);
-    await v1.setTokenRegistry(DUMMY_ADDRESS);
+    await v1.setTokenRegistry(await tokenRegistry.getAddress());
     await v1.setEscrow(await escrow.getAddress());
     await v1.setERC20Escrow(await erc20_escrow.getAddress());
+
     /**
      * set dummy service
      */
-    const serviceResponse = await manager.setService(
+    await manager.setService(
       1,
       feeAmount,
       await fulfiller.getAddress(),
       await beneficiary.getAddress(),
     );
-    const response = await manager.setServiceRef(1, validRef);
+    await manager.setServiceRef(1, validRef);
+    /**
+     * set dummy token
+     */
+    await tokenRegistry.addToken(
+      await erc20Test.getAddress(),
+    );
   });
 
   describe("Configuration Specs", async () => {
@@ -126,7 +137,7 @@ describe("BandoRouterV1", function () {
     });
 
     it("should set the tokenRegistry correctly", async () => {
-      assert.equal(await v1._tokenRegistry(), DUMMY_ADDRESS);
+      assert.equal(await v1._tokenRegistry(), await tokenRegistry.getAddress());
     });
 
     it("should set the escrow correctly", async () => {
@@ -279,11 +290,10 @@ describe("BandoRouterV1", function () {
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
         const v2Fulfiller = v2.connect(fulfiller);
         const ercFulfiller = erc20Test.connect(fulfiller);
-        await ercFulfiller.approve(await erc20_escrow.getAddress(), 100);
+        await ercFulfiller.approve(await routerContract.getAddress(), 100);
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 100;
         await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
-          .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientBalance')
-          .withArgs(await fulfiller.getAddress(), 0, 100);
+          .to.have.revertedWith('BandoRouterV1: Insufficient balance')
     });
 
     it("should fail when payer has not enough token allowance", async () => {
@@ -291,10 +301,10 @@ describe("BandoRouterV1", function () {
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 1000;
         const v2Fulfiller = v2.connect(fulfiller);
-        //await erc20Test.transfer(await fulfiller.getAddress(), 100);
+        await erc20Test.transfer(await fulfiller.getAddress(), 1000);
         await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
           .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientAllowance')
-          .withArgs(await erc20_escrow.getAddress(), 100, 1000);
+          .withArgs(await routerContract.getAddress(), 100, 1000);
     });
 
     it("should fail with invalid Ref", async () => {
@@ -309,6 +319,7 @@ describe("BandoRouterV1", function () {
     it("should route to service escrow", async () => {
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.payer = await owner.getAddress();
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 10000;
+      DUMMY_VALID_ERC20_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
       const tx = await v2.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST);
       const receipt = await tx.wait()

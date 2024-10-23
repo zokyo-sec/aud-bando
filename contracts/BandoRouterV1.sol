@@ -7,9 +7,10 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBandoERC20Fulfillable } from "./IBandoERC20Fulfillable.sol";
 import { IBandoFulfillable } from "./IBandoFulfillable.sol";
-import { IFulfillableRegistry } from "./periphery/registry/IFulfillableRegistry.sol";
 import { FulFillmentRequest, ERC20FulFillmentRequest } from "./FulfillmentTypes.sol";
 import { FulfillmentRequestLib } from "./libraries/FulfillmentRequestLib.sol";
 
@@ -37,6 +38,7 @@ contract BandoRouterV1 is
 
     using Address for address payable;
     using Math for uint256;
+    using SafeERC20 for IERC20;
 
     address public _fulfillableRegistry;
     address public _tokenRegistry;
@@ -129,7 +131,21 @@ contract BandoRouterV1 is
         uint256 serviceID, 
         ERC20FulFillmentRequest memory request
     ) public payable whenNotPaused nonReentrant returns (bool) {
-        FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry);
+        FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
+        uint256 pre_balance = IERC20(request.token).balanceOf(msg.sender);
+        require(pre_balance >= request.tokenAmount, "BandoRouterV1: Insufficient balance");
+        /// @dev Transfer the payment to the ERC20 escrow contract
+        /// It is important to have msg.sender in the from field as a best security practice
+        /// this is the reason this is done here and not in the escrow contract
+        IERC20(request.token).safeTransferFrom(
+            msg.sender,
+            _erc20Escrow,
+            request.tokenAmount
+        );
+        require(
+            IERC20(request.token).balanceOf(msg.sender) <= pre_balance - request.tokenAmount,
+            "BandoRouterV1: ERC20 invalid transfer return"
+        );
         IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
         emit ERC20ServiceRequested(serviceID, request);
         return true;

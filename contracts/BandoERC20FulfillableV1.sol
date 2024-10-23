@@ -167,12 +167,6 @@ contract BandoERC20FulfillableV1 is
         );
         (bool success, uint256 result) = amount.tryAdd(depositsAmount);
         require(success, "Overflow while adding deposits");
-        // transfer the ERC20 token to this contract
-        IERC20(token).safeTransferFrom(
-            fulfillmentRequest.payer,
-            address(this),
-            amount
-        );
         setERC20DepositsFor(
             token,
             fulfillmentRequest.payer,
