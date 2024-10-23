@@ -213,7 +213,7 @@ describe("BandoFulfillableV1", () => {
 
   describe("Beneficiary Withdraw Specs", () => {
 
-    it("should allow manager to withdraw a refund", async () => {
+    it("should allow manager to payout a beneficiary", async () => {
       const fromManager = await escrow.connect(managerEOA);
       await escrow.setManager(managerEOA.address);
       const preBalance = await ethers.provider.getBalance(await beneficiary.getAddress());
@@ -224,7 +224,7 @@ describe("BandoFulfillableV1", () => {
       await escrow.setManager(await manager.getAddress());
     });
 
-    it("should not allow an address with no refunds", async () => {
+    it("should not allow to pay a beneficiary with no refunds", async () => {
       const fromManager = await escrow.connect(managerEOA);
       await escrow.setManager(managerEOA.address);
       await expect(
