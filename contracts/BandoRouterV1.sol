@@ -143,7 +143,7 @@ contract BandoRouterV1 is
             request.tokenAmount
         );
         require(
-            IERC20(request.token).balanceOf(msg.sender) == pre_balance - request.tokenAmount,
+            IERC20(request.token).balanceOf(msg.sender) <= pre_balance - request.tokenAmount,
             "BandoRouterV1: ERC20 invalid transfer return"
         );
         IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
