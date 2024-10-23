@@ -210,4 +210,27 @@ describe("BandoFulfillableV1", () => {
       await escrow.setManager(await manager.getAddress());
     });
   });
+
+  describe("Beneficiary Withdraw Specs", () => {
+
+    it("should allow manager to withdraw a refund", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setManager(managerEOA.address);
+      const preBalance = await ethers.provider.getBalance(await beneficiary.getAddress());
+      const r = await fromManager.beneficiaryWithdraw(1);
+      await expect(r).not.to.be.reverted;
+      const postBalance = await ethers.provider.getBalance(await beneficiary.getAddress());
+      expect(postBalance).to.be.equal(preBalance + ethers.parseUnits('100', 'wei'));
+      await escrow.setManager(await manager.getAddress());
+    });
+
+    it("should not allow an address with no refunds", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setManager(managerEOA.address);
+      await expect(
+        fromManager.beneficiaryWithdraw(1)
+      ).to.be.revertedWith("There is no balance to release.");
+      await escrow.setManager(await manager.getAddress());
+    });
+  });
 });

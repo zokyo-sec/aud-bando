@@ -256,4 +256,31 @@ describe("BandoERC20FulfillableV1", () => {
       ).to.be.revertedWith('Fulfillment already registered');
     });
   });
+
+  describe("Beneficiary Withdrawal Specs", () => {
+    it("should allow the beneficiary to withdraw the funds", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      const preBalance = await erc20Test.balanceOf(await beneficiary.getAddress());
+      const r = await fromManager.beneficiaryWithdraw(1, erc20Test);
+      await expect(r).not.to.be.reverted;
+      await expect(r).to.emit(erc20Test, 'Transfer')
+        .withArgs(await escrow.getAddress(), await beneficiary.getAddress(), ethers.parseUnits('1000', 18));
+      const postBalance = await erc20Test.balanceOf(await beneficiary.getAddress());
+      expect(postBalance).to.be.equal(preBalance + ethers.parseUnits('1000', 18));
+    });
+
+    it("should only be allowed by the manager", async () => {
+      const fromRouter = await escrow.connect(router);
+      await expect(
+        fromRouter.beneficiaryWithdraw(1, erc20Test)
+      ).to.be.revertedWith('Caller is not the manager');
+    });
+
+    it("should not allow the beneficiary to withdraw the funds when there is none", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await expect(
+        fromManager.beneficiaryWithdraw(1, erc20Test)
+      ).to.be.revertedWith('There is no balance to release.');
+    });
+  });
 });

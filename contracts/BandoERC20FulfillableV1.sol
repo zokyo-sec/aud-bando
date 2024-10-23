@@ -376,7 +376,8 @@ contract BandoERC20FulfillableV1 is
         require(_manager == msg.sender, "Caller is not the manager");
         require(_releaseablePools[serviceID][token] > 0, "There is no balance to release.");
         Service memory service = _registryContract.getService(serviceID);
+        uint256 amount = _releaseablePools[serviceID][token];
         _releaseablePools[serviceID][token] = 0;
-        IERC20(token).safeTransfer(service.beneficiary, _releaseablePools[serviceID][token]);
+        IERC20(token).safeTransfer(service.beneficiary, amount);
     }
 }
