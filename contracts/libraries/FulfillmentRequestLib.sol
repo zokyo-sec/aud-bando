@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import { FulFillmentRequest, ERC20FulFillmentRequest } from '../FulfillmentTypes.sol';
 import { Service, IFulfillableRegistry } from '../periphery/registry/IFulfillableRegistry.sol';
-import { FulfillableRegistry } from '../periphery/registry/FulfillableRegistry.sol';
+import { IERC20TokenRegistry } from "../periphery/registry/IERC20TokenRegistry.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
@@ -35,6 +35,11 @@ library FulfillmentRequestLib {
     /// It is thrown when the amount sent does not match weiAmount + feeAmount
     error AmountMismatch();
 
+    /// @notice UnsupportedToken error message
+    /// It is thrown when the token is not whitelisted
+    /// @param token the token address
+    error UnsupportedToken(address token);
+
     /// @notice validateRequest
     /// @dev It checks if the amount sent is greater than zero, if the fiat amount is greater than zero,
     /// if the service reference is valid, if the amount sent matches the weiAmount + feeAmount and returns the service
@@ -53,9 +58,9 @@ library FulfillmentRequestLib {
             revert InvalidFiatAmount();
         }
         
-        Service memory service = FulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
-        if (!FulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
+        if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
         }
         
@@ -78,10 +83,12 @@ library FulfillmentRequestLib {
     /// @param serviceID the product/service ID
     /// @param request a valid FulFillmentRequest
     /// @param fulfillableRegistry the registry address
+    /// @param tokenRegistry the token registry address
     function validateERC20Request(
       uint256 serviceID,
       ERC20FulFillmentRequest memory request,
-      address fulfillableRegistry
+      address fulfillableRegistry,
+      address tokenRegistry
     ) internal view returns (Service memory) {
         if (request.tokenAmount == 0) {
             revert InsufficientAmount();
@@ -90,9 +97,13 @@ library FulfillmentRequestLib {
             revert InvalidFiatAmount();
         }
         
-        Service memory service = FulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        if(!IERC20TokenRegistry(tokenRegistry).isTokenWhitelisted(request.token)) {
+            revert UnsupportedToken(request.token);
+        }
         
-        if (!FulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
+        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        
+        if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
         }
 

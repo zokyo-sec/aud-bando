@@ -26,6 +26,10 @@ describe('BandoFulfillmentManagerV1', () => {
          */
         registry = await setupRegistry(await owner.getAddress());
         const registryAddress = await registry.getAddress();
+        tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistry');
+        const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, []);
+        await tokenRegistryInstance.waitForDeployment();
+        tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
         /**
          * deploy manager
          */
@@ -68,10 +72,11 @@ describe('BandoFulfillmentManagerV1', () => {
         await manager.setEscrow(await escrow.getAddress());
         await manager.setERC20Escrow(await erc20_escrow.getAddress());
         await router.setFulfillableRegistry(registryAddress);
-        await router.setTokenRegistry(DUMMY_ADDRESS);
+        await router.setTokenRegistry(await tokenRegistry.getAddress());
         await router.setEscrow(await escrow.getAddress());
         await router.setERC20Escrow(await erc20_escrow.getAddress());
-        await erc20Test.approve(await erc20_escrow.getAddress(), 10000000000);
+        await erc20Test.approve(await router.getAddress(), 10000000000);
+        await tokenRegistry.addToken(await erc20Test.getAddress());
     });
 
     describe('configuration', () => {
