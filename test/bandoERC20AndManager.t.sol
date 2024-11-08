@@ -452,6 +452,59 @@ contract BandoERC20FulfillableV1Test is Test {
 
     }
 
+        function test_registerFulfillmentViaManagerWithRefund(uint256 serviceID, 
+        uint256 _serviceID,
+        uint256 _feeAmount,
+        address _fulfiller,
+        address payable beneficiary,
+        string memory _serviceRef ,
+        ERC20FulFillmentRequest memory fulfillmentRequest) public {
+            vm.assume(_fulfiller != address(0));
+
+            // Bounding values
+            _serviceID = bound(_serviceID, 1, 1000000);
+            _feeAmount = bound(_feeAmount, 0, 1e18);
+            fulfillmentRequest.tokenAmount = bound(fulfillmentRequest.tokenAmount, _feeAmount + 1, _feeAmount + 10e18);
+            fulfillmentRequest.token = _tokenAddress;
+            vm.assume(fulfillmentRequest.tokenAmount > 0);
+            vm.assume(fulfillmentRequest.tokenAmount < type(uint256).max);
+            vm.assume(fulfillmentRequest.fiatAmount < type(uint256).max/2);
+
+            bandoManager.setServiceRegistry(address(f_registry));
+            f_registry.setManager(address(bandoManager));
+            vm.assume(_serviceID != 0);
+            vm.assume(_fulfiller != address(0));
+            vm.assume(beneficiary != address(0));
+        
+            bandoManager.setService( _serviceID, _feeAmount, _fulfiller, beneficiary);
+            bandoManager.setServiceRef(_serviceID, _serviceRef);
+            uint256 _id = 1;
+            FulFillmentResult memory fulfillmentResult = FulFillmentResult({
+                id: _id,
+                externalID: "",
+                receiptURI: "",
+                status: FulFillmentResultState.FAILED
+            });
+
+            bandoManager.setEscrow(payable(address(bandoERC20)));
+            bandoERC20.setManager(address(bandoManager));
+            bandoERC20.setRouter(router);
+            bandoERC20.setFulfillableRegistry(_registryProxy);
+
+            // Deposit now after pranking router
+            vm.startPrank(router);
+
+            bandoERC20.depositERC20(_serviceID, fulfillmentRequest);
+            bandoERC20.depositERC20(_serviceID, fulfillmentRequest);
+            vm.stopPrank();
+            
+            testERC20.transfer(address(bandoERC20), 1000*10**18);
+            
+            bandoManager.registerFulfillment(_serviceID, fulfillmentResult);
+            bandoManager.setERC20Escrow(payable(address(bandoERC20)));
+            bandoManager.withdrawERC20Refund(_serviceID, _tokenAddress, fulfillmentRequest.payer);
+    }
+
 //     function test_registerFulfillmentRevertsOnOverflows(ERC20FulFillmentRequest memory fulfillmentRequest, Service memory service) public {
 //         uint256 _id = 1; //id will always be 1 for the 1st record
 //         FulFillmentResult memory fulfillmentResult = FulFillmentResult({

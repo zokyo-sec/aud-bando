@@ -257,6 +257,7 @@ contract BandoERC20FulfillableV1 is
     /// @param refundee The address whose funds will be withdrawn and transferred to.
     ///
     function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant returns (bool) {
+        console.log("I am in Refund");
         require(_manager == msg.sender, "Caller is not the manager");
         uint256 authorized_refunds = getERC20RefundsFor(
             token,

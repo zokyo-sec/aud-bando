@@ -14,6 +14,7 @@ import {
     FulFillmentResultState,
     FulFillmentResult
 } from "./FulfillmentTypes.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 /// @title BandoFulfillmentManagerV1
 /// @author g6s
