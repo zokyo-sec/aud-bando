@@ -366,6 +366,9 @@ contract BandoERC20FulfillableV1 is
             (bool dsuccess, uint256 subResult) = depositsAmount.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
             _releaseablePools[serviceID][token] = releaseResult;
+            console.log("Releasable Pools Amount: ", releaseResult);
+            console.log("Service ID: ", serviceID);
+            console.log("Token: ", token);
             setERC20DepositsFor(
                 token,
                 _fulfillmentRecords[fulfillment.id].payer,
@@ -375,6 +378,7 @@ contract BandoERC20FulfillableV1 is
             _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment.receiptURI;
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
             _fulfillmentRecords[fulfillment.id].externalID = fulfillment.externalID;
+            console.log("Inside ELSE statement...");
         }
         return true;
     }
