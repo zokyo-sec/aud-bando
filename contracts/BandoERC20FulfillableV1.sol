@@ -356,6 +356,8 @@ contract BandoERC20FulfillableV1 is
         if(fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
+            console.log("REACHED HERE!");
+            console.log("Refund amount is:", total_amount);
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
             revert('Unexpected status');
         } else {
