@@ -16,6 +16,7 @@ import {
     FulFillmentResultState,
     FulFillmentResult
 } from "./FulfillmentTypes.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 /// @title BandoERC20FulfillableV1
 /// @author g6s
@@ -165,6 +166,7 @@ contract BandoERC20FulfillableV1 is
             fulfillmentRequest.payer,
             serviceID
         );
+        console.log("The depositsAmount in depositERC20 function is : ", depositsAmount);
         (bool success, uint256 result) = amount.tryAdd(depositsAmount);
         require(success, "Overflow while adding deposits");
         setERC20DepositsFor(
@@ -344,8 +346,13 @@ contract BandoERC20FulfillableV1 is
         (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[fulfillment.id].tokenAmount.tryAdd(
             service.feeAmount
         );
+        
+        console.log("Deposits amount:", depositsAmount);
+        console.log("Total amount:", total_amount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");
         require(depositsAmount >= total_amount, "There is not enough balance to be released");
+
+
         if(fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;

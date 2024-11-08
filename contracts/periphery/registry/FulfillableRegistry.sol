@@ -80,6 +80,8 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
             'FulfillableRegistry: Service already exists'
         );
         _serviceRegistry[serviceId] = service;
+        // @audit Line below Added by auditor to test test_removeServiceAddress() function in fulfillableREgistry.t.sol
+        _serviceCount++;
         emit ServiceAdded(serviceId, service.fulfiller);
         return true;
     }
